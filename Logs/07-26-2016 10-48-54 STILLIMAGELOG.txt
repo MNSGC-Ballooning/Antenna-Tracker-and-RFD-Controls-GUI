@@ -1,0 +1,2 @@
+07/26/2016 10:48:56,toggle,Still Image System Turned On
+07/26/2016 10:49:37,toggle,Still Image System Turned Off

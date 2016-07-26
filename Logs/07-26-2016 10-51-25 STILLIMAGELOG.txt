@@ -1,0 +1,128 @@
+07/26/2016 10:51:27,newText,Still Image System not Online
+07/26/2016 10:51:29,toggle,Still Image System Turned On
+07/26/2016 10:51:36,newText,Waiting for Acknowledge
+07/26/2016 10:51:37,newText,Image will be saved as: image0011_b.jpg @ time(05/19/2016 22:32:21) settings(w=282,h=114,sh=0,b=50,c=0,sa=0,i=400)
+
+07/26/2016 10:51:37,newText,Confirmed photo request
+07/26/2016 10:51:39,newText,Total Picture Size: syncsyncsyncsync
+07/26/2016 10:53:46,newText,##################################
+Raspb Time = 05/19/2016 22:35:58
+
+Local Time = 07/26/2016 10:53:46
+##################################
+07/26/2016 10:53:48,newText,Waiting for Acknowledge
+07/26/2016 10:53:53,newText,Ping Response Time = 0.46 seconds
+07/26/2016 10:53:54,newText,Retrieving Camera Settings
+07/26/2016 10:53:55,newText,File Successfully Created
+07/26/2016 10:53:55,newText,Receive Time = 0.0149998664856
+07/26/2016 10:53:55,newText,Width = 650
+07/26/2016 10:53:55,newText,Height = 450
+07/26/2016 10:53:55,newText,Sharpness = 0
+07/26/2016 10:53:55,newText,Brightness = 50
+07/26/2016 10:53:55,newText,Contrast = 0
+07/26/2016 10:53:55,newText,Saturation = 0
+07/26/2016 10:53:55,newText,ISO = 400
+07/26/2016 10:54:02,newText,Waiting for Acknowledge
+07/26/2016 10:54:04,newText,Send Time =3.15600013733
+07/26/2016 10:54:09,newText,Retrieving Camera Settings
+07/26/2016 10:54:11,newText,Waiting for Acknowledge
+07/26/2016 10:54:13,newText,Waiting for Acknowledge
+07/26/2016 10:54:15,newText,Waiting for Acknowledge
+07/26/2016 10:54:17,newText,Waiting for Acknowledge
+07/26/2016 10:54:19,newText,File Successfully Created
+07/26/2016 10:54:21,newText,Receive Time = 2.0
+07/26/2016 10:54:21,newText,Camera Setting Retrieval Error
+07/26/2016 10:54:22,newText,Retrieving Camera Settings
+07/26/2016 10:54:23,newText,File Successfully Created
+07/26/2016 10:54:23,newText,Receive Time = 0.0
+07/26/2016 10:54:23,newText,Width = 195
+07/26/2016 10:54:23,newText,Height = 114
+07/26/2016 10:54:23,newText,Sharpness = 0
+07/26/2016 10:54:23,newText,Brightness = 50
+07/26/2016 10:54:23,newText,Contrast = 0
+07/26/2016 10:54:23,newText,Saturation = 0
+07/26/2016 10:54:23,newText,ISO = 400
+07/26/2016 10:54:30,newText,Image will be saved as: image0001_b.jpg @ time(05/19/2016 22:36:30) settings(w=195,h=114,sh=0,b=50,c=0,sa=0,i=400)
+
+07/26/2016 10:54:30,newText,Confirmed photo request
+07/26/2016 10:54:32,newText,Total Picture Size: AA
+07/26/2016 10:56:55,toggle,Still Image System Turned Off
+07/26/2016 10:56:56,toggle,Still Image System Turned On
+07/26/2016 10:57:06,newText,Waiting for Acknowledge
+07/26/2016 10:57:08,newText,Waiting for Acknowledge
+07/26/2016 10:57:08,newText,##################################
+Raspb Time = 05/19/2016 22:39:20
+
+Local Time = 07/26/2016 10:57:08
+##################################
+07/26/2016 10:57:11,newText,Ping Response Time = 0.28 seconds
+07/26/2016 10:57:22,newText,Image will be saved as: image0000_b.jpg @ time(05/19/2016 22:39:18) settings(w=650,h=450,sh=0,b=50,c=0,sa=0,i=400)
+
+07/26/2016 10:57:22,newText,Confirmed photo request
+07/26/2016 10:57:24,newText,Total Picture Size: 
+07/26/2016 10:57:43,newText,##################################
+Raspb Time = 05/19/2016 22:39:56
+
+Local Time = 07/26/2016 10:57:43
+##################################
+07/26/2016 10:57:50,newText,Ping Response Time = 0.65 seconds
+07/26/2016 10:57:58,newText,Image will be saved as: image0000_b.jpg @ time(05/19/2016 22:39:18) settings(w=650,h=450,sh=0,b=50,c=0,sa=0,i=400)
+
+07/26/2016 10:57:58,newText,Confirmed photo request
+07/26/2016 10:57:58,newText,Total Picture Size: Aimage0000_b.jpg275352
+
+07/26/2016 10:58:18,toggle,Still Image System Turned Off
+07/26/2016 10:58:18,toggle,Still Image System Turned On
+07/26/2016 10:58:30,toggle,Still Image System Turned Off
+07/26/2016 10:58:31,toggle,Still Image System Turned On
+07/26/2016 10:58:35,newText,##################################
+Raspb Time = 05/19/2016 22:40:48
+
+Local Time = 07/26/2016 10:58:35
+##################################
+07/26/2016 10:58:40,newText,Ping Response Time = 0.46 seconds
+07/26/2016 11:00:08,newText,Waiting for Acknowledge
+07/26/2016 11:00:10,newText,Waiting for Acknowledge
+07/26/2016 11:00:10,newText,##################################
+Raspb Time = 05/19/2016 22:42:23
+
+Local Time = 07/26/2016 11:00:10
+##################################
+07/26/2016 11:00:12,newText,Waiting for Acknowledge
+07/26/2016 11:00:14,newText,Waiting for Acknowledge
+07/26/2016 11:00:16,newText,Waiting for Acknowledge
+07/26/2016 11:00:18,newText,Waiting for Acknowledge
+07/26/2016 11:00:20,newText,Waiting for Acknowledge
+07/26/2016 11:00:22,newText,Waiting for Acknowledge
+07/26/2016 11:00:27,newText,Ping Response Time = 0.46 seconds
+07/26/2016 11:00:29,newText,Retrieving Camera Settings
+07/26/2016 11:00:29,newText,File Successfully Created
+07/26/2016 11:00:29,newText,Receive Time = 0.0159997940063
+07/26/2016 11:00:29,newText,Width = 650
+07/26/2016 11:00:29,newText,Height = 450
+07/26/2016 11:00:29,newText,Sharpness = 0
+07/26/2016 11:00:29,newText,Brightness = 50
+07/26/2016 11:00:29,newText,Contrast = 0
+07/26/2016 11:00:29,newText,Saturation = 0
+07/26/2016 11:00:29,newText,ISO = 400
+07/26/2016 11:00:36,newText,Waiting for Acknowledge
+07/26/2016 11:00:37,newText,Send Time =3.125
+07/26/2016 11:00:40,newText,Retrieving Camera Settings
+07/26/2016 11:00:42,newText,Waiting for Acknowledge
+07/26/2016 11:00:44,newText,Waiting for Acknowledge
+07/26/2016 11:00:46,newText,Waiting for Acknowledge
+07/26/2016 11:00:48,newText,Waiting for Acknowledge
+07/26/2016 11:00:48,newText,File Successfully Created
+07/26/2016 11:00:48,newText,Receive Time = 0.0
+07/26/2016 11:00:48,newText,Width = 195
+07/26/2016 11:00:48,newText,Height = 114
+07/26/2016 11:00:48,newText,Sharpness = 0
+07/26/2016 11:00:48,newText,Brightness = 50
+07/26/2016 11:00:48,newText,Contrast = 0
+07/26/2016 11:00:48,newText,Saturation = 0
+07/26/2016 11:00:48,newText,ISO = 400
+07/26/2016 11:00:55,newText,Image will be saved as: image0001_b.jpg @ time(05/19/2016 22:43:00) settings(w=195,h=114,sh=0,b=50,c=0,sa=0,i=400)
+
+07/26/2016 11:00:55,newText,Confirmed photo request
+07/26/2016 11:00:57,newText,Total Picture Size: 
+07/26/2016 11:02:48,toggle,Still Image System Turned Off

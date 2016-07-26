@@ -1,0 +1,53 @@
+07/26/2016 11:03:00,toggle,Still Image System Turned On
+07/26/2016 11:03:01,newText,##################################
+Raspb Time = 05/19/2016 22:45:14
+
+Local Time = 07/26/2016 11:03:01
+##################################
+07/26/2016 11:03:06,newText,Ping Response Time = 0.46 seconds
+07/26/2016 11:03:16,newText,Waiting for Acknowledge
+07/26/2016 11:03:17,newText,Send Time =3.15699982643
+07/26/2016 11:03:19,newText,Waiting for Acknowledge
+07/26/2016 11:03:21,newText,Waiting for Acknowledge
+07/26/2016 11:03:23,newText,Waiting for Acknowledge
+07/26/2016 11:03:25,newText,Waiting for Acknowledge
+07/26/2016 11:03:27,newText,Waiting for Acknowledge
+07/26/2016 11:03:29,newText,Waiting for Acknowledge
+07/26/2016 11:03:31,newText,Waiting for Acknowledge
+07/26/2016 11:03:33,newText,Waiting for Acknowledge
+07/26/2016 11:03:35,newText,Send Time =3.13999986649
+07/26/2016 11:03:35,newText,Retrieving Camera Settings
+07/26/2016 11:03:37,newText,Waiting for Acknowledge
+07/26/2016 11:03:39,newText,Waiting for Acknowledge
+07/26/2016 11:03:41,newText,Waiting for Acknowledge
+07/26/2016 11:03:43,newText,Waiting for Acknowledge
+07/26/2016 11:03:45,newText,File Successfully Created
+07/26/2016 11:03:47,newText,Receive Time = 2.0
+07/26/2016 11:03:47,newText,Camera Setting Retrieval Error
+07/26/2016 11:03:48,newText,Retrieving Camera Settings
+07/26/2016 11:03:48,newText,File Successfully Created
+07/26/2016 11:03:48,newText,Receive Time = 0.0
+07/26/2016 11:03:48,newText,Width = 39
+07/26/2016 11:03:48,newText,Height = 211
+07/26/2016 11:03:48,newText,Sharpness = 0
+07/26/2016 11:03:48,newText,Brightness = 50
+07/26/2016 11:03:48,newText,Contrast = 0
+07/26/2016 11:03:48,newText,Saturation = 0
+07/26/2016 11:03:48,newText,ISO = 400
+07/26/2016 11:03:53,newText,Waiting for Acknowledge
+07/26/2016 11:03:54,newText,Send Time =3.125
+07/26/2016 11:04:07,newText,Retrieving Camera Settings
+07/26/2016 11:04:07,newText,File Successfully Created
+07/26/2016 11:04:07,newText,Receive Time = 0.0
+07/26/2016 11:04:07,newText,Width = 239
+07/26/2016 11:04:07,newText,Height = 211
+07/26/2016 11:04:07,newText,Sharpness = 0
+07/26/2016 11:04:07,newText,Brightness = 50
+07/26/2016 11:04:07,newText,Contrast = 0
+07/26/2016 11:04:07,newText,Saturation = 0
+07/26/2016 11:04:07,newText,ISO = 400
+07/26/2016 11:04:14,newText,Image will be saved as: image0003_b.jpg @ time(05/19/2016 22:46:18) settings(w=239,h=211,sh=0,b=50,c=0,sa=0,i=400)
+
+07/26/2016 11:04:14,newText,Confirmed photo request
+07/26/2016 11:04:16,newText,Total Picture Size: 
+07/26/2016 11:05:13,toggle,Still Image System Turned Off

@@ -1,0 +1,20 @@
+07/26/2016 10:42:58,toggle,Still Image System Turned On
+07/26/2016 10:43:03,newText,Waiting for Acknowledge
+07/26/2016 10:43:05,newText,Waiting for Acknowledge
+07/26/2016 10:43:05,newText,##################################
+Raspb Time = 05/19/2016 22:25:18
+
+Local Time = 07/26/2016 10:43:05
+##################################
+07/26/2016 10:43:10,newText,Ping Response Time = 0.46 seconds
+07/26/2016 10:43:13,newText,Retrieving Camera Settings
+07/26/2016 10:43:14,newText,File Successfully Created
+07/26/2016 10:43:14,newText,Receive Time = 0.0160000324249
+07/26/2016 10:43:14,newText,Width = 282
+07/26/2016 10:43:14,newText,Height = 114
+07/26/2016 10:43:14,newText,Sharpness = 0
+07/26/2016 10:43:14,newText,Brightness = 50
+07/26/2016 10:43:14,newText,Contrast = 0
+07/26/2016 10:43:14,newText,Saturation = 0
+07/26/2016 10:43:14,newText,ISO = 400
+07/26/2016 10:43:58,toggle,Still Image System Turned Off

@@ -1,0 +1,206 @@
+07/26/2016 11:17:15,toggle,Still Image System Turned On
+07/26/2016 11:17:17,newText,##################################
+Raspb Time = 05/19/2016 22:59:12
+
+Local Time = 07/26/2016 11:17:17
+##################################
+07/26/2016 11:17:21,newText,Ping Response Time = 0.40 seconds
+07/26/2016 11:17:24,newText,Retrieving Camera Settings
+07/26/2016 11:17:24,newText,File Successfully Created
+07/26/2016 11:17:24,newText,Receive Time = 0.0
+07/26/2016 11:17:24,newText,Width = 282
+07/26/2016 11:17:24,newText,Height = 244
+07/26/2016 11:17:24,newText,Sharpness = 0
+07/26/2016 11:17:24,newText,Brightness = 50
+07/26/2016 11:17:24,newText,Contrast = 0
+07/26/2016 11:17:24,newText,Saturation = 0
+07/26/2016 11:17:24,newText,ISO = 400
+07/26/2016 11:17:31,newText,Image will be saved as: image0007_b.jpg @ time(05/19/2016 22:59:04) settings(w=282,h=244,sh=0,b=50,c=0,sa=0,i=400)
+
+07/26/2016 11:17:31,newText,Confirmed photo request
+07/26/2016 11:17:31,newText,Total Picture Size: 103268
+
+07/26/2016 11:17:31,newText,Current Received Position: 0
+07/26/2016 11:17:33,newText,try number: 1
+07/26/2016 11:17:33,newText,	resent last
+07/26/2016 11:17:33,newText,	pos @ 0
+07/26/2016 11:17:33,newText,	wordlength 7000
+07/26/2016 11:17:33,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 11:17:35,newText,System Match
+07/26/2016 11:17:35,newText,Current Received Position: 0
+07/26/2016 11:17:38,newText,Current Received Position: 1000
+07/26/2016 11:17:40,newText,Current Received Position: 2000
+07/26/2016 11:17:43,newText,Current Received Position: 3000
+07/26/2016 11:17:47,newText,try number: 1
+07/26/2016 11:17:47,newText,	resent last
+07/26/2016 11:17:47,newText,	pos @ 3000
+07/26/2016 11:17:47,newText,	wordlength 6000
+07/26/2016 11:17:47,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 11:17:49,newText,System Match
+07/26/2016 11:17:49,newText,Current Received Position: 3000
+07/26/2016 11:17:52,newText,Current Received Position: 4000
+07/26/2016 11:17:54,newText,Current Received Position: 5000
+07/26/2016 11:17:56,newText,Current Received Position: 6000
+07/26/2016 11:17:58,newText,Current Received Position: 7000
+07/26/2016 11:18:00,newText,Current Received Position: 8000
+07/26/2016 11:18:02,newText,Current Received Position: 9000
+07/26/2016 11:18:04,newText,Current Received Position: 10000
+07/26/2016 11:18:07,newText,Current Received Position: 11000
+07/26/2016 11:18:09,newText,Current Received Position: 12000
+07/26/2016 11:18:11,newText,Current Received Position: 13000
+07/26/2016 11:18:13,newText,Current Received Position: 14000
+07/26/2016 11:18:15,newText,Current Received Position: 15000
+07/26/2016 11:18:18,newText,Current Received Position: 16000
+07/26/2016 11:18:20,newText,Current Received Position: 17000
+07/26/2016 11:18:22,newText,Current Received Position: 18000
+07/26/2016 11:18:24,newText,Current Received Position: 19000
+07/26/2016 11:18:26,newText,Current Received Position: 20000
+07/26/2016 11:18:28,newText,Current Received Position: 21000
+07/26/2016 11:18:31,newText,Current Received Position: 22000
+07/26/2016 11:18:33,newText,Current Received Position: 23000
+07/26/2016 11:18:35,newText,Current Received Position: 24000
+07/26/2016 11:18:37,newText,Current Received Position: 25000
+07/26/2016 11:18:39,newText,Current Received Position: 26000
+07/26/2016 11:18:42,newText,Current Received Position: 27000
+07/26/2016 11:18:44,newText,Current Received Position: 28000
+07/26/2016 11:18:46,newText,Current Received Position: 29000
+07/26/2016 11:18:48,newText,Current Received Position: 30000
+07/26/2016 11:18:50,newText,try number: 1
+07/26/2016 11:18:50,newText,	resent last
+07/26/2016 11:18:50,newText,	pos @ 30000
+07/26/2016 11:18:50,newText,	wordlength 5000
+07/26/2016 11:18:50,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 11:18:52,newText,System Match
+07/26/2016 11:18:52,newText,Current Received Position: 30000
+07/26/2016 11:18:55,newText,Current Received Position: 31000
+07/26/2016 11:18:57,newText,try number: 1
+07/26/2016 11:18:57,newText,	resent last
+07/26/2016 11:18:57,newText,	pos @ 31000
+07/26/2016 11:18:57,newText,	wordlength 4000
+07/26/2016 11:18:57,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 11:18:59,newText,System Match
+07/26/2016 11:18:59,newText,Current Received Position: 31000
+07/26/2016 11:19:02,newText,try number: 2
+07/26/2016 11:19:02,newText,	resent last
+07/26/2016 11:19:02,newText,	pos @ 31000
+07/26/2016 11:19:02,newText,	wordlength 3000
+07/26/2016 11:19:02,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 11:19:04,newText,System Match
+07/26/2016 11:19:04,newText,Current Received Position: 31000
+07/26/2016 11:19:07,newText,try number: 3
+07/26/2016 11:19:07,newText,	resent last
+07/26/2016 11:19:07,newText,	pos @ 31000
+07/26/2016 11:19:07,newText,	wordlength 2000
+07/26/2016 11:19:07,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 11:19:09,newText,System Match
+07/26/2016 11:19:09,newText,Current Received Position: 31000
+07/26/2016 11:19:10,newText,Current Received Position: 32000
+07/26/2016 11:19:11,newText,Current Received Position: 33000
+07/26/2016 11:19:13,newText,try number: 1
+07/26/2016 11:19:13,newText,	resent last
+07/26/2016 11:19:13,newText,	pos @ 33000
+07/26/2016 11:19:13,newText,	wordlength 1000
+07/26/2016 11:19:13,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 11:19:15,newText,System Match
+07/26/2016 11:19:15,newText,Current Received Position: 33000
+07/26/2016 11:19:16,newText,Current Received Position: 34000
+07/26/2016 11:19:17,newText,Current Received Position: 35000
+07/26/2016 11:19:18,newText,Current Received Position: 36000
+07/26/2016 11:19:20,newText,try number: 1
+07/26/2016 11:19:20,newText,	resent last
+07/26/2016 11:19:20,newText,	pos @ 36000
+07/26/2016 11:19:20,newText,	wordlength 1000
+07/26/2016 11:19:20,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 11:19:22,newText,System Match
+07/26/2016 11:19:22,newText,Current Received Position: 36000
+07/26/2016 11:19:23,newText,Current Received Position: 37000
+07/26/2016 11:19:25,newText,try number: 1
+07/26/2016 11:19:25,newText,	resent last
+07/26/2016 11:19:25,newText,	pos @ 37000
+07/26/2016 11:19:25,newText,	wordlength 1000
+07/26/2016 11:19:25,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 11:19:27,newText,System Match
+07/26/2016 11:19:27,newText,Current Received Position: 37000
+07/26/2016 11:19:31,newText,try number: 2
+07/26/2016 11:19:31,newText,	resent last
+07/26/2016 11:19:31,newText,	pos @ 37000
+07/26/2016 11:19:31,newText,	wordlength 1000
+07/26/2016 11:19:31,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 11:19:33,newText,System Match
+07/26/2016 11:19:33,newText,Current Received Position: 37000
+07/26/2016 11:19:34,newText,Current Received Position: 38000
+07/26/2016 11:19:36,newText,try number: 1
+07/26/2016 11:19:36,newText,	resent last
+07/26/2016 11:19:36,newText,	pos @ 38000
+07/26/2016 11:19:36,newText,	wordlength 1000
+07/26/2016 11:19:36,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 11:19:39,newText,System Match
+07/26/2016 11:19:39,newText,Current Received Position: 38000
+07/26/2016 11:19:40,newText,Current Received Position: 39000
+07/26/2016 11:19:40,newText,Current Received Position: 40000
+07/26/2016 11:19:41,newText,Current Received Position: 41000
+07/26/2016 11:19:42,newText,Current Received Position: 42000
+07/26/2016 11:19:42,newText,Current Received Position: 43000
+07/26/2016 11:19:43,newText,Current Received Position: 44000
+07/26/2016 11:19:43,newText,Current Received Position: 45000
+07/26/2016 11:19:44,newText,Current Received Position: 46000
+07/26/2016 11:19:45,newText,Current Received Position: 47000
+07/26/2016 11:19:45,newText,Current Received Position: 48000
+07/26/2016 11:19:46,newText,Current Received Position: 49000
+07/26/2016 11:19:47,newText,Current Received Position: 50000
+07/26/2016 11:19:47,newText,Current Received Position: 51000
+07/26/2016 11:19:48,newText,Current Received Position: 52000
+07/26/2016 11:19:48,newText,Current Received Position: 53000
+07/26/2016 11:19:49,newText,Current Received Position: 54000
+07/26/2016 11:19:50,newText,Current Received Position: 55000
+07/26/2016 11:19:50,newText,Current Received Position: 56000
+07/26/2016 11:19:51,newText,Current Received Position: 57000
+07/26/2016 11:19:52,newText,Current Received Position: 58000
+07/26/2016 11:19:52,newText,Current Received Position: 59000
+07/26/2016 11:19:53,newText,Current Received Position: 60000
+07/26/2016 11:19:53,newText,Current Received Position: 61000
+07/26/2016 11:19:54,newText,Current Received Position: 62000
+07/26/2016 11:19:55,newText,Current Received Position: 63000
+07/26/2016 11:19:55,newText,Current Received Position: 64000
+07/26/2016 11:19:56,newText,Current Received Position: 65000
+07/26/2016 11:19:57,newText,Current Received Position: 66000
+07/26/2016 11:19:57,newText,Current Received Position: 67000
+07/26/2016 11:19:58,newText,Current Received Position: 68000
+07/26/2016 11:19:58,newText,Current Received Position: 69000
+07/26/2016 11:19:59,newText,Current Received Position: 70000
+07/26/2016 11:20:00,newText,Current Received Position: 71000
+07/26/2016 11:20:00,newText,Current Received Position: 72000
+07/26/2016 11:20:01,newText,Current Received Position: 73000
+07/26/2016 11:20:02,newText,Current Received Position: 74000
+07/26/2016 11:20:02,newText,Current Received Position: 75000
+07/26/2016 11:20:03,newText,Current Received Position: 76000
+07/26/2016 11:20:03,newText,Current Received Position: 77000
+07/26/2016 11:20:04,newText,Current Received Position: 78000
+07/26/2016 11:20:05,newText,Current Received Position: 79000
+07/26/2016 11:20:05,newText,Current Received Position: 80000
+07/26/2016 11:20:06,newText,Current Received Position: 81000
+07/26/2016 11:20:07,newText,Current Received Position: 82000
+07/26/2016 11:20:07,newText,Current Received Position: 83000
+07/26/2016 11:20:08,newText,Current Received Position: 84000
+07/26/2016 11:20:08,newText,Current Received Position: 85000
+07/26/2016 11:20:09,newText,Current Received Position: 86000
+07/26/2016 11:20:10,newText,Current Received Position: 87000
+07/26/2016 11:20:10,newText,Current Received Position: 88000
+07/26/2016 11:20:11,newText,Current Received Position: 89000
+07/26/2016 11:20:12,newText,Current Received Position: 90000
+07/26/2016 11:20:12,newText,Current Received Position: 91000
+07/26/2016 11:20:13,newText,Current Received Position: 92000
+07/26/2016 11:20:13,newText,Current Received Position: 93000
+07/26/2016 11:20:14,newText,Current Received Position: 94000
+07/26/2016 11:20:15,newText,Current Received Position: 95000
+07/26/2016 11:20:15,newText,Current Received Position: 96000
+07/26/2016 11:20:16,newText,Current Received Position: 97000
+07/26/2016 11:20:17,newText,Current Received Position: 98000
+07/26/2016 11:20:17,newText,Current Received Position: 99000
+07/26/2016 11:20:18,newText,Current Received Position: 100000
+07/26/2016 11:20:18,newText,Current Received Position: 101000
+07/26/2016 11:20:19,newText,Current Received Position: 102000
+07/26/2016 11:20:20,newText,Current Received Position: 103000
+07/26/2016 11:20:22,newText,Error with filename, saved as newimage.jpg
+07/26/2016 11:20:22,newText,Image Saved
+07/26/2016 11:20:22,newText,Receive Time = 170.955000162

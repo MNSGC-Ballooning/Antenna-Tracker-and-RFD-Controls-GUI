@@ -1,0 +1,161 @@
+07/26/2016 13:00:56,toggle,Still Image System Turned On
+07/26/2016 13:00:58,newText,Image will be saved as: image0014_b.jpg
+07/26/2016 13:00:58,newText,Confirmed photo request
+07/26/2016 13:00:58,newText,Total Picture Size: 248888
+
+07/26/2016 13:00:58,newText,Current Received Position: 0
+07/26/2016 13:01:00,newText,try number: 1
+07/26/2016 13:01:00,newText,	resent last
+07/26/2016 13:01:00,newText,	pos @ 0
+07/26/2016 13:01:00,newText,	wordlength 7000
+07/26/2016 13:01:00,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 13:01:02,newText,System Match
+07/26/2016 13:01:02,newText,Current Received Position: 0
+07/26/2016 13:01:05,newText,try number: 2
+07/26/2016 13:01:05,newText,	resent last
+07/26/2016 13:01:05,newText,	pos @ 0
+07/26/2016 13:01:05,newText,	wordlength 6000
+07/26/2016 13:01:05,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 13:01:07,newText,System Match
+07/26/2016 13:01:07,newText,Current Received Position: 0
+07/26/2016 13:01:10,newText,try number: 3
+07/26/2016 13:01:10,newText,	resent last
+07/26/2016 13:01:10,newText,	pos @ 0
+07/26/2016 13:01:10,newText,	wordlength 5000
+07/26/2016 13:01:10,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 13:01:12,newText,System Match
+07/26/2016 13:01:12,newText,Current Received Position: 0
+07/26/2016 13:01:15,newText,Current Received Position: 2000
+07/26/2016 13:01:17,newText,try number: 1
+07/26/2016 13:01:17,newText,	resent last
+07/26/2016 13:01:17,newText,	pos @ 2000
+07/26/2016 13:01:17,newText,	wordlength 4000
+07/26/2016 13:01:17,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 13:01:19,newText,System Match
+07/26/2016 13:01:19,newText,Current Received Position: 2000
+07/26/2016 13:01:22,newText,try number: 2
+07/26/2016 13:01:22,newText,	resent last
+07/26/2016 13:01:22,newText,	pos @ 2000
+07/26/2016 13:01:22,newText,	wordlength 3000
+07/26/2016 13:01:22,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 13:01:24,newText,System Match
+07/26/2016 13:01:24,newText,Current Received Position: 2000
+07/26/2016 13:01:27,newText,Current Received Position: 3000
+07/26/2016 13:01:31,newText,try number: 1
+07/26/2016 13:01:31,newText,	resent last
+07/26/2016 13:01:31,newText,	pos @ 3000
+07/26/2016 13:01:31,newText,	wordlength 2000
+07/26/2016 13:01:31,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 13:01:33,newText,System Match
+07/26/2016 13:01:33,newText,Current Received Position: 3000
+07/26/2016 13:01:37,newText,try number: 2
+07/26/2016 13:01:37,newText,	resent last
+07/26/2016 13:01:37,newText,	pos @ 3000
+07/26/2016 13:01:37,newText,	wordlength 1000
+07/26/2016 13:01:37,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 13:01:39,newText,System Match
+07/26/2016 13:01:39,newText,Current Received Position: 3000
+07/26/2016 13:01:43,newText,try number: 3
+07/26/2016 13:01:43,newText,	resent last
+07/26/2016 13:01:43,newText,	pos @ 3000
+07/26/2016 13:01:43,newText,	wordlength 1000
+07/26/2016 13:01:43,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 13:01:45,newText,System Match
+07/26/2016 13:01:45,newText,Current Received Position: 3000
+07/26/2016 13:01:49,newText,try number: 4
+07/26/2016 13:01:49,newText,	resent last
+07/26/2016 13:01:49,newText,	pos @ 3000
+07/26/2016 13:01:49,newText,	wordlength 1000
+07/26/2016 13:01:49,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 13:01:51,newText,System Match
+07/26/2016 13:01:51,newText,Current Received Position: 3000
+07/26/2016 13:01:55,newText,try number: 5
+07/26/2016 13:01:55,newText,	resent last
+07/26/2016 13:01:55,newText,	pos @ 3000
+07/26/2016 13:01:55,newText,	wordlength 1000
+07/26/2016 13:01:55,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 13:01:57,newText,System Match
+07/26/2016 13:01:57,newText,Current Received Position: 3000
+07/26/2016 13:02:01,newPic,Images/image0014_b.jpg
+07/26/2016 13:02:01,newText,Image Saved
+07/26/2016 13:02:01,newText,Receive Time = 63.1289999485
+07/26/2016 13:02:13,toggle,Still Image System Turned Off
+07/26/2016 13:02:14,toggle,Still Image System Turned On
+07/26/2016 13:02:24,newText,##################################
+Raspb Time = 05/19/2016 23:51:41
+
+Local Time = 07/26/2016 13:02:24
+##################################
+07/26/2016 13:02:29,newText,Ping Response Time = 0.46 seconds
+07/26/2016 13:02:32,newText,Image will be saved as: image0000_b.jpg
+07/26/2016 13:02:32,newText,Confirmed photo request
+07/26/2016 13:02:32,newText,Total Picture Size: 248028
+
+07/26/2016 13:02:32,newText,Current Received Position: 0
+07/26/2016 13:02:34,newText,try number: 1
+07/26/2016 13:02:34,newText,	resent last
+07/26/2016 13:02:34,newText,	pos @ 0
+07/26/2016 13:02:34,newText,	wordlength 7000
+07/26/2016 13:02:34,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 13:02:37,newText,System Match
+07/26/2016 13:02:37,newText,Current Received Position: 0
+07/26/2016 13:02:39,newText,try number: 2
+07/26/2016 13:02:39,newText,	resent last
+07/26/2016 13:02:39,newText,	pos @ 0
+07/26/2016 13:02:39,newText,	wordlength 6000
+07/26/2016 13:02:39,newText,Attempting to Sync - This should take approx. 2 sec
+07/26/2016 13:02:42,newText,System Match
+07/26/2016 13:02:42,newText,Current Received Position: 0
+07/26/2016 13:02:44,newText,Current Received Position: 5000
+07/26/2016 13:02:46,newText,Current Received Position: 10000
+07/26/2016 13:02:48,newText,Current Received Position: 15000
+07/26/2016 13:02:50,newText,Current Received Position: 20000
+07/26/2016 13:02:53,newText,Current Received Position: 25000
+07/26/2016 13:02:55,newText,Current Received Position: 30000
+07/26/2016 13:02:57,newText,Current Received Position: 35000
+07/26/2016 13:02:59,newText,Current Received Position: 40000
+07/26/2016 13:03:01,newText,Current Received Position: 45000
+07/26/2016 13:03:03,newText,Current Received Position: 50000
+07/26/2016 13:03:05,newText,Current Received Position: 55000
+07/26/2016 13:03:07,newText,Current Received Position: 60000
+07/26/2016 13:03:09,newText,Current Received Position: 65000
+07/26/2016 13:03:12,newText,Current Received Position: 70000
+07/26/2016 13:03:14,newText,Current Received Position: 75000
+07/26/2016 13:03:16,newText,Current Received Position: 80000
+07/26/2016 13:03:18,newText,Current Received Position: 85000
+07/26/2016 13:03:20,newText,Current Received Position: 90000
+07/26/2016 13:03:23,newText,Current Received Position: 95000
+07/26/2016 13:03:25,newText,Current Received Position: 100000
+07/26/2016 13:03:27,newText,Current Received Position: 105000
+07/26/2016 13:03:29,newText,Current Received Position: 110000
+07/26/2016 13:03:32,newText,Current Received Position: 115000
+07/26/2016 13:03:34,newText,Current Received Position: 120000
+07/26/2016 13:03:36,newText,Current Received Position: 125000
+07/26/2016 13:03:38,newText,Current Received Position: 130000
+07/26/2016 13:03:40,newText,Current Received Position: 135000
+07/26/2016 13:03:42,newText,Current Received Position: 140000
+07/26/2016 13:03:44,newText,Current Received Position: 145000
+07/26/2016 13:03:46,newText,Current Received Position: 150000
+07/26/2016 13:03:48,newText,Current Received Position: 155000
+07/26/2016 13:03:50,newText,Current Received Position: 160000
+07/26/2016 13:03:52,newText,Current Received Position: 165000
+07/26/2016 13:03:54,newText,Current Received Position: 170000
+07/26/2016 13:03:57,newText,Current Received Position: 175000
+07/26/2016 13:03:59,newText,Current Received Position: 180000
+07/26/2016 13:04:01,newText,Current Received Position: 185000
+07/26/2016 13:04:03,newText,Current Received Position: 190000
+07/26/2016 13:04:05,newText,Current Received Position: 195000
+07/26/2016 13:04:07,newText,Current Received Position: 200000
+07/26/2016 13:04:09,newText,Current Received Position: 205000
+07/26/2016 13:04:11,newText,Current Received Position: 210000
+07/26/2016 13:04:13,newText,Current Received Position: 215000
+07/26/2016 13:04:15,newText,Current Received Position: 220000
+07/26/2016 13:04:18,newText,Current Received Position: 225000
+07/26/2016 13:04:20,newText,Current Received Position: 230000
+07/26/2016 13:04:22,newText,Current Received Position: 235000
+07/26/2016 13:04:24,newText,Current Received Position: 240000
+07/26/2016 13:04:26,newText,Current Received Position: 245000
+07/26/2016 13:04:29,newPic,Images/image0000_b.jpg
+07/26/2016 13:04:29,newText,Image Saved
+07/26/2016 13:04:29,newText,Receive Time = 116.82799983
+07/26/2016 13:04:53,toggle,Still Image System Turned Off

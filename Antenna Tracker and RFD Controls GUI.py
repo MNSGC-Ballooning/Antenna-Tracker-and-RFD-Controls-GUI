@@ -30,6 +30,7 @@ import matplotlib
 import base64					   # = encodes an image in b64 Strings (and decodes)
 import hashlib					  # = generates hashes
 import serial.tools.list_ports
+import threading
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
@@ -142,7 +143,7 @@ bearingLog = np.array([])
 stillImageOnline = False
 wordlength = 7000		  							# Variable to determine spacing of checksum. Ex. wordlength = 1000 will send one thousand bits before calculating and verifying checksum
 extension = ".jpg"
-displayPhotoPath = "Images/MnSGC_Logo.jpg"			# The starting display photo is the logo of the MnSGC
+displayPhotoPath = "Images/MnSGC_Logo_highRes.png"			# The starting display photo is the logo of the MnSGC
 
 #Picture Qualities
 picWidth = 650
@@ -333,6 +334,7 @@ class RfdThread(QtCore.QThread):
 	newPicture = Signal(str)
 	newLocation = Signal(BalloonUpdate)
 	requestConfirmation = Signal(str)
+	newPicSliderValues = Signal()
 	
 	def __init__(self, parent=None):
 		super(RfdThread, self).__init__(parent)
@@ -367,6 +369,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		self.rfdThread.newProgress.connect(self.updatePictureProgress)
 		self.rfdThread.newLocation.connect(self.updateBalloonLocation)
 		self.rfdThread.requestConfirmation.connect(self.highResConfirmationCheck)
+		self.rfdThread.newPicSliderValues.connect(self.updateStillImageValues)
 		self.iridiumThread.newLocation.connect(self.updateBalloonLocation)
 		self.aprsThread.newLocation.connect(self.updateBalloonLocation)
 		# Start the threads, they should run forever, and add them to the thread pool
@@ -380,7 +383,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		### Button Function Link Setup ###
 		self.updateSettings.clicked.connect(self.getSettings)
 		self.antennaCenter.clicked.connect(moveToCenterPos)
-		self.motionTest.clicked.connect(panBothServos)
+		self.pointAtBalloon.clicked.connect(pointToMostRecentBalloon)
 		self.trackerLaunch.clicked.connect(self.setAutotrack)
 		self.recalibrateCenterBearing.clicked.connect(self.calibrateIMU)
 		self.checkComPorts.clicked.connect(self.searchComPorts)
@@ -413,10 +416,11 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		self.connectionTestButton.clicked.connect(lambda: self.stillImageButtonPress('timeSync'))
 	
 		### Inital Still Image System Picture Display Setup ###
+		self.tabs.resizeEvent = self.resizePicture
+		self.picLabel.setScaledContents(True)
 		pm = QPixmap(displayPhotoPath)		# Create a pixmap from the default image
 		scaledPm = pm.scaled(self.picLabel.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation)		# Scale the pixmap
 		self.picLabel.setPixmap(scaledPm)			# Set the label to the map
-		self.picLabel.setScaledContents(1)
 		self.picLabel.show()				# Show the image
 		
 		### Still Image Slider Updates ###
@@ -439,6 +443,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		self.searchComPorts()
 		
 		currentBalloon = BalloonUpdate('',0,0,0,0,'')
+		self.tabs.setCurrentIndex(0)
 		
 	def setAutotrack(self):
 		""" Toggles autotracking """
@@ -448,6 +453,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			#Update a nice and pretty status indicator in red
 			self.status.setText("Offline")
 			self.changeTextColor(self.status,"red")
+			self.trackerLaunch.setText("Launch Antenna Tracker")
 			
 		else:
 			autotrackOnline = True
@@ -690,6 +696,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		if autotrackOnline:
 			self.status.setText("Online")
 			self.changeTextColor(self.status,"green")				# Update a nice and pretty status indicator in green
+			self.trackerLaunch.setText("Disable Antenna Tracker")
 			moveToTarget(update.getBear(), update.getEle())			# Move Antenna to correct position
 		else:
 			#Graphing Arrays - wipe them
@@ -836,6 +843,16 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			self.changeTextColor(self.stillImageOnlineLabel,"green")
 			return
 			
+	def updateStillImageValues(self):
+		global picWidth, picHeight, picSharpness, picBrightness, picContrast, picSaturation, picISO
+		self.picWidthSlider.setValue(picWidth)
+		self.picHeightSlider.setValue(picHeight)
+		self.picSharpSlider.setValue(picSharpness)
+		self.picBrightSlider.setValue(picBrightness)
+		self.picContrastSlider.setValue(picContrast)
+		self.picSaturationSlider.setValue(picSaturation)
+		self.picISOSlider.setValue(picISO)
+			
 	def updatePicSliderValues(self):
 		""" Updates the values displayed for the still image picture control sliders """
 		self.picCurrentWidthValue.setText(str(self.picWidthSlider.value()))
@@ -876,7 +893,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			self.rfdWorker = rfdWorker
 			
 		if arg == 'getPicSettings':
-			rfdWorker = Worker(self.PicGetSettings)		# Create an instance of the Worker class, and pass in the function you need
+			rfdWorker = Worker(self.picGetSettings)		# Create an instance of the Worker class, and pass in the function you need
 			rfdWorker.moveToThread(self.rfdThread)		# Move the new class to the thread you created
 			rfdWorker.start.emit("hello")		# Start it up and say something to confirm
 			self.rfdWorker = rfdWorker
@@ -1027,7 +1044,6 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				f.write(temp)
 				try:
 					self.listbox.addItem(temp)
-					self.rfdThread.newStillText.emit(temp)
 				except:
 					print "Error Adding Items"
 					self.rfdThread.newStillText.emit("Error Adding Items")
@@ -1053,23 +1069,32 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		
 		data = pic.text()
 		if (data[10] != 'b'):										# High Res images are marked with a b
-			self.rfdThread.requestConfirmation.emit(pic)			# Emit the signal to get a confirmation				
+			self.rfdThread.requestConfirmation.emit(str(data))			# Emit the signal to get a confirmation				
 		else:
-			self.getRequestedImage(pic)						# Go ahead and download the picture
+			self.getRequestedImageHelper(str(data))						# Go ahead and download the picture
+			
+	def getRequestedImageHelper(self,data):
+		# Get rid of the confirmation window if it's there
+		try:
+			self.confirmationCheckWindow.deleteLater()
+		except:
+			print("No window to delete, or failed to delete window")
+		
+		print("Entered")
+		print(threading.current_thread().name)
+		rfdWorker = Worker(lambda: self.getRequestedImage(data))		# Create an instance of the Worker class, and pass in the function you need
+		rfdWorker.moveToThread(self.rfdThread)		# Move the new class to the thread you created
+		rfdWorker.start.emit("hello")		# Start it up and say something to confirm
+		self.rfdWorker = rfdWorker
 
 	def getRequestedImage(self,data):
 		""" Still Image System: Retrieves the image specified in the argument, deletes the confirmation window if necessary """
 		global stillImageOnline
 		global rfdCOM, rfdBaud, rfdTimeout
 		global wordlength, extension
+		print(threading.current_thread().name)
 
 		rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)			# Open the RFD serial port
-
-		# Get rid of the confirmation window if it's there
-		try:
-			self.confirmationCheckWindow.deleteLater()
-		except:
-			print("No window to delete, or failed to delete window")
 
 		### Continuously write 3 until the acknowledge is received ###
 		rfdSer.write('3')
@@ -1077,18 +1102,18 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		while (rfdSer.read() != 'A'):
 			if(timeCheck < time.time()):			# Make sure you don't emit a huge stream of messages if the wrong this is received
 				print "Waiting for Acknowledge"
-				self.rfdThread.newStilText.emit("Waiting for Acknowledge")
+				self.rfdThread.newStillText.emit("Waiting for Acknowledge")
 				timeCheck = time.time() + 1
 			sys.stdout.flush()
 			rfdSer.write('3')
-		sync()							# Syncronize the data streams of the ground station and the Pi before starting
-		imagepath = data
+		# self.sync(rfdSer)							# Syncronize the data streams of the ground station and the Pi before starting
+		imagepath = data[0:15]
 		rfdSer.write(data)				# Tell the pi which picture you want to download
 		timecheck = time.time()
 		print "Image will be saved as:", imagepath
 		self.rfdThread.newStillText.emit("Image will be saved as: " + str(imagepath))
 		sys.stdout.flush()
-		self.receive_image(str(imagepath), wordlength)			# Receive the image
+		self.receive_image(str(imagepath), wordlength, rfdSer)			# Receive the image
 		print "Receive Time =", (time.time() - timecheck)
 		self.rfdThread.newStillText.emit("Receive Time = " + str((time.time() - timecheck)))
 		self.rfdThread.newProgress.emit(0,1)			# Reset the progress bar
@@ -1097,7 +1122,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 
 		return
 
-	def highResConfirmationCheck(self,pic):
+	def highResConfirmationCheck(self,data):
 		""" 
 		Creates a window a yes and no button prompting the user for confirmation before downloading
 		the high resolution image. Interprets the button presses.
@@ -1121,7 +1146,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		self.confirmationCheckWindow.show()
 
 		### Connect the buttons to the functions ###
-		self.confirmationYesButton.clicked.connect(lambda: self.getRequestedImage(pic))
+		self.confirmationYesButton.clicked.connect(lambda: self.getRequestedImageHelper(data))
 		self.confirmationNoButton.clicked.connect(self.noConfirmation)
 
 	def noConfirmation(self):
@@ -1129,7 +1154,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		self.confirmationCheckWindow.deleteLater()
 		return
 			
-	def PicGetSettings(self):
+	def picGetSettings(self):
 		""" Still Image System: Retrieve Current Camera Settings """
 		global stillImageOnline
 		global rfdCOM, rfdBaud, rfdTimeout
@@ -1214,6 +1239,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				print("ISO = " + str(picISO))
 				self.rfdThread.newStillText.emit("ISO = " + str(picISO))
 				file.close()
+				self.rfdThread.newPicSliderValues.emit()
 			except:
 				print "Camera Setting Retrieval Error"
 				self.rfdThread.newStillText.emit("Camera Setting Retrieval Error")
@@ -1245,7 +1271,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			### Update the global values based on current slider position ###
 			picWidth = int(self.picWidthSlider.value())
 			picHeight = int(self.picHeightSlider.value())
-			picSharness = int(self.picSharpSlider.value())
+			picSharpness = int(self.picSharpSlider.value())
 			picBrightness = int(self.picBrightSlider.value())
 			picContrast = int(self.picContrastSlider.value())
 			picSaturation = int(self.picSaturationSlider.value())
@@ -1255,7 +1281,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			file = open("camerasettings.txt","w")
 			file.write(str(picWidth)+"\n")
 			file.write(str(picHeight)+"\n")
-			file.write(str(picSharness)+"\n")
+			file.write(str(picSharpness)+"\n")
 			file.write(str(picBrightness)+"\n")
 			file.write(str(picContrast)+"\n")
 			file.write(str(picSaturation)+"\n")
@@ -1582,6 +1608,13 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		sys.stdout.flush()			# Clear the buffer
 		return
 		
+	def resizePicture(self,event):
+		global displayPhotoPath
+		pm = QPixmap(displayPhotoPath)		# Create a pixmap from the default image
+		scaledPm = pm.scaled(self.picLabel.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation)		# Scale the pixmap
+		self.picLabel.setPixmap(scaledPm)			# Set the label to the map
+		self.picLabel.show()				# Show the image
+		
 	def rfdListenButtonPress(self):
 		""" Receives the press of the listen button, and handles it """
 		global rfdCommandsOnline, rfdListenOnline, listenInterrupt, commandInterrupt
@@ -1649,13 +1682,12 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				while(not listenInterrupt):
 					line = rfdSer.readline()
 					if(line != ''):				# Send the line to the text browser if it's not empty
-						self.rfdThread.newCommandText.emit(datetime.today().strftime('%H:%M:%S') + '\n')
-						self.rfdThread.newCommandText.emit("Received: " + line)
+						self.rfdThread.newCommandText.emit(datetime.today().strftime('%H:%M:%S') + " || "+line)
 					self.rfdThread.payloadUpdate.emit(line)			# Send it to the payload manager
 					if(line[0:3] == "GPS" and len(line[4:].split(','))==7):		# If the line received has the GPS identifier, handle it as a newly received RFD balloon location update
 						line = line.split(',')
 						line[0] = line[0][4:]
-						getRFD(line)
+						self.getRFD(line)
 
 				### Clean Up after being Interrupted ###
 				listenInterrupt = False 		# Reset the interrupt
@@ -2272,13 +2304,21 @@ def stringToFloat(s):
 	else:
 		return float(s)
 
+def pointToMostRecentBalloon():
+	""" Aims the tracker at the balloon, even if the antenna tracker is offline """
+	
+	print "Starting serial communication with",servoCOM
+	if servoAttached:
+		moveToTarget(currentBalloon.getBear(),currentBalloon.getEle())
+		print "Move to Center Command Sent via", servoCOM
+	else:
+		print "Error: Settings set to no Servo Connection"
 def moveToCenterPos():
 	""" Send servos to their center pos (should be horizontal and straight ahead if zeroed) """
 	
 	print "Starting serial communication with",servoCOM
 	if servoAttached:
-		moveTiltServo(127)		# 127 is the middle value for the servos
-		movePanServo(127)
+		moveToTarget(0,0)
 		print "Move to Center Command Sent via", servoCOM
 	else:
 		print "Error: Settings set to no Servo Connection"
@@ -2519,7 +2559,7 @@ if __name__ == "__main__":
 	app.addLibraryPath(path)
 	
 	mGui = MainWindow()			# Launch the main window
-	mGui.show()					# Shows the main window
+	mGui.showMaximized()					# Shows the main window
 	sys.stdout = Unbuffered(sys.stdout)		# Sets up an unbuffered stream
 	app.exec_()					# Starts the application
 	

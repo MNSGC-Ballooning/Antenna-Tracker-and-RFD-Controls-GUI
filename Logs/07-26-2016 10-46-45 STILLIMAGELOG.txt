@@ -1,0 +1,8 @@
+07/26/2016 10:46:47,toggle,Still Image System Turned On
+07/26/2016 10:46:48,newText,##################################
+Raspb Time = 05/19/2016 22:29:01
+
+Local Time = 07/26/2016 10:46:48
+##################################
+07/26/2016 10:46:51,newText,Ping Response Time = 0.27 seconds
+07/26/2016 10:47:44,toggle,Still Image System Turned Off
