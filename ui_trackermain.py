@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'trackermain.ui'
 #
-# Created: Tue Jul 26 13:36:50 2016
+# Created: Tue Jul 26 15:40:16 2016
 #      by: pyside-uic 0.2.15 running on PySide 1.2.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -1522,7 +1522,7 @@ class Ui_MainWindow(object):
         MainWindow.setTabOrder(self.bearingSouth, self.bearingWest)
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "MainWindow", None, QtGui.QApplication.UnicodeUTF8))
+        MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "Antenna Tracker and RFD Controls", None, QtGui.QApplication.UnicodeUTF8))
         self.incomingDataLabel.setText(QtGui.QApplication.translate("MainWindow", "Incoming GPS Data:", None, QtGui.QApplication.UnicodeUTF8))
         self.incomingDataTable.verticalHeaderItem(0).setText(QtGui.QApplication.translate("MainWindow", "Last Received Time", None, QtGui.QApplication.UnicodeUTF8))
         self.incomingDataTable.verticalHeaderItem(1).setText(QtGui.QApplication.translate("MainWindow", "Latitude", None, QtGui.QApplication.UnicodeUTF8))

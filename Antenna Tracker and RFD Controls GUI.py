@@ -532,6 +532,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				self.canvas.draw()
 
 	def manualRefresh(self):
+		""" Updates the ground station data table """
 		### Ground Station Data Table (usually doesn't change, but I guess it might) ###
 		self.updateGround(0,0,groundLat)
 		self.updateGround(0,1,groundLon)
@@ -844,6 +845,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			return
 			
 	def updateStillImageValues(self):
+		""" Updates the sliders to match the global variables """
 		global picWidth, picHeight, picSharpness, picBrightness, picContrast, picSaturation, picISO
 		self.picWidthSlider.setValue(picWidth)
 		self.picHeightSlider.setValue(picHeight)
@@ -1062,6 +1064,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			
 	def checkRequestedImage(self,pic):
 		""" Still Image System: Make sure the user doesn't accidentally get a high res image """
+		
 		self.picSelectionWindow.deleteLater()
 		global stillImageOnline
 		global rfdCOM, rfdBaud, rfdTimeout
@@ -1074,6 +1077,8 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			self.getRequestedImageHelper(str(data))						# Go ahead and download the picture
 			
 	def getRequestedImageHelper(self,data):
+		""" Starts gettings the requested image in the rfd thread """
+		
 		# Get rid of the confirmation window if it's there
 		try:
 			self.confirmationCheckWindow.deleteLater()
