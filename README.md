@@ -8,8 +8,6 @@ RFD controls are added as well, allowing communication with a raspberry Pi runni
 
 Uses [Anaconda](https://www.continuum.io/)
 
-Hello
-
 ### There are 3 autotrack methods available: Iridium, APRS, and RFD.
 
 -**Iridium tracking:** requires internet access so that you can reach the server holding the information controlled by MSU-Borealis.
