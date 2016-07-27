@@ -1,5 +1,6 @@
 # Antenna-Tracker-and-RFD-Controls-GUI
-Antenna Tracker and RFD Controls software with related source
+By Austin Langford, based on work from MSU-BOREALIS
+
 
 This software allows you to control the antenna tracker designed by MSU-Borealis using the [Mini Maestro Servo Controller](https://www.pololu.com/product/1354).
 It uses an Arduino Uno with a GPS shield and a [BNO055 9-Axis IMU](https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor/overview) to calibrate itself.
