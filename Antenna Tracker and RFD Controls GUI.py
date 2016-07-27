@@ -947,7 +947,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)
 			
 			### Write 1 until you get the acknowledge back ###
-			rfdSer.write('1' + "\n")
+			rfdSer.write('1')
 			timeCheck = time.time() + 1
 			while (rfdSer.read() != 'A'):
 				if(timeCheck < time.time()):			# Make sure you don't print out a huge stream if you get the wrong response
@@ -955,7 +955,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 					self.rfdThread.newStillText.emit("Waiting for Acknowledge")
 					timeCheck = time.time() + 1
 				sys.stdout.flush()
-				rfdSer.write('1'+'\n')
+				rfdSer.write('1')
 				
 			### Make the file name by reading the radio ###
 			sendfilename = ""
@@ -1016,7 +1016,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout) 	# Open the RFD Serial Port
 			
 			### Send the Pi 2 until the acknowledge is received ###
-			rfdSer.write('2'+'\n')
+			rfdSer.write('2')
 			timeCheck = time.time() + 1
 			while (rfdSer.read() != 'A'):
 				if(timeCheck < time.time()):				# Make sure you don't print out a huge stream if the wrong thing is received
@@ -1024,7 +1024,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 					self.rfdThread.newStillText.emit("Waiting for Acknowledge")
 					timeCheck = time.time() + 1
 				sys.stdout.flush()
-				rfdSer.write('2'+'\n')
+				rfdSer.write('2')
 			
 			### Use the entry box to get the name of the file, or fall back to the placeholder name ###
 			try:
@@ -1180,14 +1180,14 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			killtime = time.time()+10  			# A timeout for the loop so you don't get stuck
 			
 			### Send the Pi 4 until the acknowledge is received ###
-			rfdSer.write('4'+'\n')
+			rfdSer.write('4')
 			timeCheck = time.time()
 			while ((rfdSer.read() != 'A') & (time.time()<killtime)):
 				if(timeCheck < time.time() + 1):					# Make sure you don't print out a huge stream if you get the wrong response
 					print "Waiting for Acknowledge"
 					self.rfdThread.newStillText.emit("Waiting for Acknowledge")
 					timeCheck = time.time() +  1
-				rfdSer.write('4'+'\n')
+				rfdSer.write('4')
 			timecheck = time.time()
 			
 			### Open the file camerasettings.txt in write mode, and write everything the Pi is sending ###
@@ -1294,7 +1294,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			file.close()
 			
 			### Continue sending 5 until the acknowledge is received from the Pi ###
-			rfdSer.write('5'+'\n')
+			rfdSer.write('5')
 			timeCheck = time.time() + 1
 			while (rfdSer.read() != 'A'):
 				if(timeCheck < time.time()):
@@ -1315,6 +1315,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				return
 			timecheck = time.time()
 			temp = file.readline()
+			time.sleep(0.5)
 			while(temp != ""):
 				rfdSer.write(temp)
 				temp = file.readline()
@@ -1417,7 +1418,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)		#Open the RFD Serial Port
 
 			### Send the Pi T until the acknowledge is received, or until the too much time has passed ###
-			rfdSer.write('T'+"\n")
+			rfdSer.write('T')
 			termtime = time.time() + 20
 			timeCheck = time.time() + 1
 			while (rfdSer.read() != 'A'):
@@ -1425,7 +1426,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 					print "Waiting for Acknowledge"
 					self.rfdThread.newStillText.emit("Waiting for Acknowledge")
 					timeCheck = time.time() + 1
-				rfdSer.write('T'+'\n')
+				rfdSer.write('T')
 				if (termtime < time.time()):	# If too much time has passed, let the user know and return
 					print "No Acknowledge Received, Connection Error"
 					self.rfdThread.newStillText.emit('No Acknowledge Received, Connection Error')
@@ -1570,12 +1571,12 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		rfdSer = rfdPort			# Rename the RFD Serial object to the usual thing
 		
 		### Send the Pi A until the acknowledge is received, or too much time has passed ###
-		rfdSer.write('6' + "\n")
+		rfdSer.write('6')
 		termtime = time.time() + 20
 		while (rfdSer.read() != 'A'):
 			self.rfdThread.newStillText.emit("Waiting for Acknowledge")
 			print "Waiting for Acknowledge"
-			rfdSer.write('6'+'\n')
+			rfdSer.write('6')
 			if (termtime < time.time()):	# If too much time passed, let the user know and return
 				print "No Acknowledge Received, Connection Error"
 				self.rfdThread.newStillText.emit("No Acknowledge Received, Connection Error")
@@ -1584,20 +1585,20 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		avg = 0
 		
 		### Using the specifified number of pings, give the Pi 10 seconds per ping to respond correctly, and record the times ###
-		rfdSer.write('P' + '\n')
+		rfdSer.write('P')
 		temp = ""
 		for x in range (1,numping):
 			sendtime = time.time()
 			receivetime = 0
 			termtime = sendtime + 10
 			while ((temp != 'P')&(time.time()<termtime)):	# Loop until you get a P back, or too much time has passed
-				rfdSer.write('P' + '\n')
+				rfdSer.write('P')
 				temp = rfdSer.read()
 				receivetime = time.time()
 				if (receivetime == 0):	# If too much time has passed and no valid response, print the error, write D, and return
 					print "Connection Error, No return ping within 10 seconds"
 					self.rfdThread.newStillText.emit("Connection Error, No return ping within 10 seconds")
-					rfdSer.write('D' + '\n')
+					rfdSer.write('D')
 					sys.stdout.flush()
 					return
 			else:	# Otherwise reset the temp variable, and accumulate the avg
@@ -1677,7 +1678,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		""" Listens to the RFD serial port until interrupted """
 		global rfdCOM, rfdBaud, rfdTimeout, rfdCommandsOnline, commandInterrupt
 		global listenInterrupt, rfdListenOnline
-		global saveData
+		global saveData, useRFD
 		
 		if(rfdListenOnline):		# Confirm that the listen is online
 			if(rfdAttached):		# Make sure there's still an RFD
@@ -1690,9 +1691,11 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 						self.rfdThread.newCommandText.emit(datetime.today().strftime('%H:%M:%S') + " || "+line)
 					self.rfdThread.payloadUpdate.emit(line)			# Send it to the payload manager
 					if(line[0:3] == "GPS" and len(line[4:].split(','))==7):		# If the line received has the GPS identifier, handle it as a newly received RFD balloon location update
+						print(line[0:3],line[4:])
 						line = line.split(',')
 						line[0] = line[0][4:]
-						self.getRFD(line)
+						if(useRFD):
+							self.getRFD(line)
 
 				### Clean Up after being Interrupted ###
 				listenInterrupt = False 		# Reset the interrupt
