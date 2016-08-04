@@ -1,0 +1,63 @@
+08/04/2016 15:23:51,toggle,RFD Commands Online
+08/04/2016 15:23:51,newText,
+15:23:51
+08/04/2016 15:23:51,newText,Sent: LED?5!
+08/04/2016 15:23:53,newText,Sent: LED?5!
+08/04/2016 15:23:55,newText,Sent: LED?5!
+08/04/2016 15:23:57,newText,Sent: LED?5!
+08/04/2016 15:23:59,newText,Sent: LED?5!
+08/04/2016 15:24:01,newText,Sent: LED?5!
+08/04/2016 15:24:03,newText,Sent: LED?5!
+08/04/2016 15:24:05,newText,Sent: LED?5!
+08/04/2016 15:24:07,newText,Sent: LED?5!
+08/04/2016 15:24:09,newText,Sent: LED?5!
+08/04/2016 15:24:09,newText,Acknowledged at: 15:24:09
+08/04/2016 15:24:09,newText,LED;Blinking 5 times!
+
+08/04/2016 15:24:19,toggle,RFD Commands Online
+08/04/2016 15:24:19,newText,
+15:24:19
+08/04/2016 15:24:19,newText,Sent: LED?10!
+08/04/2016 15:24:21,newText,Sent: LED?10!
+08/04/2016 15:24:21,newText,Acknowledged at: 15:24:21
+08/04/2016 15:24:21,newText,LED;Blinking 10 times!
+
+08/04/2016 15:24:37,toggle,RFD Commands Online
+08/04/2016 15:24:37,newText,
+15:24:37
+08/04/2016 15:24:37,newText,Sent: LED?20!
+08/04/2016 15:24:39,newText,Sent: LED?20!
+08/04/2016 15:24:41,newText,Sent: LED?20!
+08/04/2016 15:24:41,newText,Acknowledged at: 15:24:41
+08/04/2016 15:24:41,newText,LED;Blinking 20 times!
+
+08/04/2016 15:24:43,toggle,RFD Listen Online
+08/04/2016 15:24:43,toggle,RFD Listen Offline
+08/04/2016 15:24:43,toggle,RFD Listen Online
+08/04/2016 15:24:44,newText,15:24:44 || GPS:2,50,21,0,0,0,0!
+
+08/04/2016 15:24:47,newText,15:24:47 || GPS:2,50,25,0,0,0,0!
+
+08/04/2016 15:24:50,newText,15:24:50 || GPS:2,50,28,0,0,0,0!
+
+08/04/2016 15:24:53,newText,15:24:53 || GPS:2,50,31,0,0,0,0!
+
+08/04/2016 15:24:56,newText,15:24:56 || GPS:2,50,34,0,0,0,0!
+
+08/04/2016 15:24:59,newText,15:24:59 || GPS:2,50,37,0,0,0,0!
+
+08/04/2016 15:25:02,newText,15:25:02 || GPS:2,50,40,0,0,0,0!
+
+08/04/2016 15:25:02,newText,15:25:02 || LED;Done blinking!
+
+08/04/2016 15:25:05,newText,15:25:05 || GPS:2,50,43,0,0,0,0!
+
+08/04/2016 15:25:08,newText,15:25:08 || GPS:2,50,46,0,0,0,0!
+
+08/04/2016 15:25:11,newText,15:25:11 || GPS:2,50,49,0,0,0,0!
+
+08/04/2016 15:25:14,newText,15:25:14 || GPS:2,50,52,0,0,0,0!
+
+08/04/2016 15:25:17,newText,15:25:17 || GPS:2,50,55,0,0,0,0!
+
+08/04/2016 15:25:19,toggle,RFD Listen Offline

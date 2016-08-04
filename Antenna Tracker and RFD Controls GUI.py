@@ -361,7 +361,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		self.rfdThread = RfdThread()
 		self.iridiumThread = DataThread()
 		self.aprsThread = DataThread()		
-		# Signal Connections
+		# Signal Connections from Side Threads
 		self.rfdThread.newCommandText.connect(self.updateRFDCommandsText)
 		self.rfdThread.newStillText.connect(self.updateStillImageSystemText)
 		self.rfdThread.payloadUpdate.connect(self.updatePayloads)
@@ -406,14 +406,17 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		# RFD Control Links
 		self.rfdCommandButton.clicked.connect(self.rfdCommandsButtonPress)
 		self.rfdListenButton.clicked.connect(self.rfdListenButtonPress)
+		self.getPiRuntimeDataButton.clicked.connect(self.getPiRuntimeDataButtonPress)
 		# Still Image Control Links
 		self.stillImageOnlineButton.clicked.connect(self.ToggleStillImageSystem)
 		self.mostRecentImageButton.clicked.connect(lambda: self.stillImageButtonPress('mostRecent'))		# lambda allows for passing an additional argument so one function can handle all the buttons
 		self.imageDataTxtButton.clicked.connect(lambda: self.stillImageButtonPress('selectImage'))
-		self.picDefaultSettingsButton.clicked.connect(self.PicDefaultSettings)
+		self.picDefaultSettingsButton.clicked.connect(self.picDefaultSettings)
 		self.picSendNewSettingsButton.clicked.connect(lambda: self.stillImageButtonPress('sendNewSettings'))
 		self.picGetSettingsButton.clicked.connect(lambda: self.stillImageButtonPress('getPicSettings'))
 		self.connectionTestButton.clicked.connect(lambda: self.stillImageButtonPress('timeSync'))
+		self.picHorizontalFlipButton.clicked.connect(lambda: self.stillImageButtonPress('HFlip'))
+		self.picVerticalFlipButton.clicked.connect(lambda: self.stillImageButtonPress('VFlip'))
 	
 		### Inital Still Image System Picture Display Setup ###
 		self.tabs.resizeEvent = self.resizePicture
@@ -461,6 +464,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			self.antennaOnline(currentBalloon)
 
 	def updateBalloonLocation(self,update):
+		""" Updates the tracker with the latest balloon location """
 		global currentBalloon
 		if(update.getSeconds() < currentBalloon.getSeconds()):
 			return
@@ -875,7 +879,9 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			
 		if arg == 'selectImage':
 			if(stillImageOnline):
+				### Build the image selection window ###
 				self.picSelectionWindow = QWidget()
+				self.picSelectionWindow.setWindowTitle("Image Selection")
 				self.listbox = QListWidget(self)
 				self.picSelectionLabel = QLabel()
 				self.picSelectionLabel.setText("Select the Picture to Receive")
@@ -887,6 +893,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				self.picSelectLayout.addWidget(self.picSelectionButton)
 				self.picSelectionWindow.setLayout(self.picSelectLayout)
 				self.picSelectionWindow.show()
+				# Move to the function if they click select
 				self.picSelectionButton.clicked.connect(lambda: self.checkRequestedImage(self.listbox.currentItem()))
 
 			rfdWorker = Worker(self.getImageDataTxt)		# Create an instance of the Worker class, and pass in the function you need
@@ -901,9 +908,21 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			self.rfdWorker = rfdWorker
 			
 		if arg == 'sendNewSettings':
-			rfdWorker = Worker(self.PicSendNewSettings)		# Create an instance of the Worker class, and pass in the function you need
+			rfdWorker = Worker(self.picSendNewSettings)		# Create an instance of the Worker class, and pass in the function you need
 			rfdWorker.moveToThread(self.rfdThread)		# Move the new class to the thread you created
 			rfdWorker.start.emit("hello")		# Start it up and say something to confirm
+			self.rfdWorker = rfdWorker
+			
+		if arg == 'HFlip':
+			rfdWorker = Worker(self.picHorizontalFlip)
+			rfdWorker.moveToThread(self.rfdThread)
+			rfdWorker.start.emit('hello')
+			self.rfdWorker = rfdWorker
+			
+		if arg == 'VFlip':
+			rfdWorker = Worker(self.picVerticalFlip)
+			rfdWorker.moveToThread(self.rfdThread)
+			rfdWorker.start.emit('hello')
 			self.rfdWorker = rfdWorker
 			
 		if arg == 'timeSync':
@@ -1028,11 +1047,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			
 			### Use the entry box to get the name of the file, or fall back to the placeholder name ###
 			try:
-				if (self.requestedImageDataName.text() == ""):
-					datafilepath = "imagedata"
-				else:
-					datafilepath = self.requestedImageDataName.text()
-				f = open(datafilepath+".txt","w")
+				f = open('imagedata'+".txt","w")
 			except:		# Return if there's an error opening the file
 				print "Error with Opening File"
 				self.rfdThread.newStillText.emit("Error with Opening File")
@@ -1257,7 +1272,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			self.rfdThread.newStillText.emit("No RFD Radio on this Computer")
 			return
 			
-	def PicSendNewSettings(self):
+	def picSendNewSettings(self):
 		""" Still Image System: Send New Camera Settings to the Pi """
 		global stillImageOnline
 		global rfdCOM, rfdBaud, rfdTimeout
@@ -1345,7 +1360,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			self.rfdThread.newStillText.emit("No RFD Radio on this Computer")
 			return
 			
-	def PicDefaultSettings(self):
+	def picDefaultSettings(self):
 		""" Still Image System: Sets the camera variables to the default values """
 		global stillImageOnline
 		global picWidth, picHeight, picSharpness, picBrightness, picContrast, picSaturation, picISO
@@ -1403,6 +1418,65 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		
 		return
 		
+	def picVerticalFlip(self):
+		""" Still Image System: Flips the image vertically """
+		if not stillImageOnline:
+			print("Still Image System not Online")
+			self.rfdThread.newStillText.emit("Still Image System not Online")
+			return
+		
+		if(rfdAttached):
+			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)		# Open the RFD Serial Port
+			
+			### Send the pi 0 until the acknowledge is received, or until too much time has passed ###
+			rfdSer.write('0')
+			termtime = time.time() + 10
+			timeCheck = time.time() + 1
+			while (rfdSer.read() != 'A'):
+				if(timeCheck < time.time()):
+					print("Waiting for Acknowledge")
+					self.rfdThread.newStillText.emit("Waiting for Acknowledge")
+					timeCheck = time.time() + 1
+				rfdSer.write('0')
+				if(termtime < time.time()):
+					print("No Acknowldeg Received, Connection Error")
+					self.rfdThread.newStillText.emit("No Acknowledge Received, Connect Error")
+					sys.stdout.flush()
+					return
+					
+			print("Camera Vertically Flipped")
+			self.rfdThread.newStillText.emit("Camera Vertically Flipped")
+			
+	def picHorizontalFlip(self):
+		""" Still Image System: Flips the image Horizontally """
+		if not stillImageOnline:
+			print("Still Image System not Online")
+			self.rfdThread.newStillText.emit("Still Image System not Online")
+			return
+		
+		if(rfdAttached):
+			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)		# Open the RFD Serial Port
+			
+			### Send the pi 9 until the acknowledge is received, or until too much time has passed ###
+			rfdSer.write('9')
+			termtime = time.time() + 10
+			timeCheck = time.time() + 1
+			while (rfdSer.read() != 'A'):
+				if(timeCheck < time.time()):
+					print("Waiting for Acknowledge")
+					self.rfdThread.newStillText.emit("Waiting for Acknowledge")
+					timeCheck = time.time() + 1
+				rfdSer.write('9')
+				if(termtime < time.time()):
+					print("No Acknowldeg Received, Connection Error")
+					self.rfdThread.newStillText.emit("No Acknowledge Received, Connect Error")
+					sys.stdout.flush()
+					return
+					
+			print("Camera Horizontally Flipped")
+			self.rfdThread.newStillText.emit("Camera Horizontally Flipped")
+			
+		
 	def time_sync(self):
 		""" Still Image System: Syncronizes the Pi and ground station so that the connection test can be run """
 		global stillImageOnline
@@ -1418,7 +1492,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)		#Open the RFD Serial Port
 
 			### Send the Pi T until the acknowledge is received, or until the too much time has passed ###
-			rfdSer.write('T')
+			rfdSer.write('8')
 			termtime = time.time() + 20
 			timeCheck = time.time() + 1
 			while (rfdSer.read() != 'A'):
@@ -1426,7 +1500,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 					print "Waiting for Acknowledge"
 					self.rfdThread.newStillText.emit("Waiting for Acknowledge")
 					timeCheck = time.time() + 1
-				rfdSer.write('T')
+				rfdSer.write('8')
 				if (termtime < time.time()):	# If too much time has passed, let the user know and return
 					print "No Acknowledge Received, Connection Error"
 					self.rfdThread.newStillText.emit('No Acknowledge Received, Connection Error')
@@ -1468,12 +1542,16 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		done = False			#Initializes the end condition
 		
 		### Setup the Progress Bar ###
-		photoSize = rfdSer.readline()			# The first thing you get is the total picture size so you can make the progress bar
-		print("Total Picture Size: ",photoSize)
-		self.rfdThread.newStillText.emit("Total Picture Size: " + photoSize)
-		stillPhotoMax = int(photoSize)
-		stillProgress = 0
-		self.rfdThread.newProgress.emit(stillProgress,stillPhotoMax)
+		try:
+			photoSize = rfdSer.readline()			# The first thing you get is the total picture size so you can make the progress bar
+			print("Total Picture Size: ",photoSize)
+			self.rfdThread.newStillText.emit("Total Picture Size: " + photoSize)
+			stillPhotoMax = int(photoSize)
+			stillProgress = 0
+			self.rfdThread.newProgress.emit(stillProgress,stillPhotoMax)
+		except:
+			print("Error retrieving picture size")
+			self.rfdThread.newStillText.emit("Error retrieving picture size")
 		
 		### Retreive Data Loop (Will end when on timeout) ###
 		while(done == False):
@@ -1769,7 +1847,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				self.rfdThread.newCommandText.emit('\n' + datetime.today().strftime('%H:%M:%S'))		# Print out when the message began to send
 				acknowledged = False
 				while (not acknowledged):
-					rfdSer.write(toSend + "\n")
+					rfdSer.write(toSend)
 					self.rfdThread.newCommandText.emit("Sent: " + toSend)		# Add the message to the browser every time it is sent
 					line = rfdSer.readline()		# Read to look for the acknowledge, print out whatever you get for debugging purposes (so long as its not nothing)
 					if(line != ''):
@@ -1810,6 +1888,88 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				return
 		else:
 			return
+			
+	def getPiRuntimeDataButtonPress(self):
+		""" Check to see if the system is in a state where it can receive the pi Runtime Data """
+		
+		if(stillImageOnline):
+			print("Still Image System cannot be Online")
+			self.rfdReceiveBrowser.append("Still Image System cannot be Online")
+			return
+		if(rfdCommandsOnline or rfdListenOnline):
+			print("RFD Commands cannot be Online")
+			self.rfdReceiveBrowser.append("RFD Commands cannot be Online")
+			return
+			
+		rfdWorker = Worker(self.getPiRuntimeData)
+		rfdWorker.moveToThread(self.rfdThread)
+		rfdWorker.start.emit("hello")
+		self.rfdWorker = rfdWorker
+			
+	def getPiRuntimeData(self):
+		""" Retrieve the runtime data from the Pi """
+		
+		if(rfdAttached):
+			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)		# Open the RFD Serial Port
+			
+			### Send the pi 7 until the acknowledge is received, or until too much time has passed ###
+			rfdSer.write('7')
+			termtime = time.time() + 10
+			timeCheck = time.time() + 1
+			while (rfdSer.read() != 'A'):
+				if(timeCheck < time.time()):
+					print("Waiting for Acknowledge")
+					self.rfdThread.newCommandText.emit("Waiting for Acknowledge")
+					timeCheck = time.time() + 1
+				rfdSer.write('7')
+				if(termtime < time.time()):
+					print("No Acknowldeg Received, Connection Error")
+					self.rfdThread.newCommandText.emit("No Acknowledge Received, Connect Error")
+					sys.stdout.flush()
+					return
+			
+			### Receive piruntimedata.txt ###
+			timecheck = time.time()
+			try:
+				f = open("piruntimedata.txt","w")
+			except:
+				print "Error opening file"
+				self.rfdThread.newCommandText.emit("Error opening file")
+				sys.stdout.flush()
+				return
+			timecheck = time.time()
+			sys.stdin.flush()
+			termtime = time.time()+60
+			temp = rfdSer.readline()
+			while((temp != "\r") & (temp != "") ):		# Write everything the radio is receiving to the file
+				f.write(temp)
+				temp = rfdSer.read()
+				if (termtime < time.time()):
+					print "Error receiving piruntimedata.txt"
+					self.rfdThread.newCommandText.emit("Error receiving piruntimedata.txt")
+					f.close()
+					return
+			f.close()
+			rfdSer.close()
+			
+			print "piruntimedata.txt saved to local folder"
+			self.rfdThread.newCommandText.emit("piruntimedata.txt saved")
+			print "Receive Time =", (time.time() - timecheck)
+			self.rfdThread.newCommandText.emit("Receive Time ="+str((time.time() - timecheck)))
+			
+			### Open piruntimedata.txt and print it into the command browser ###
+			try:
+				f = open('piruntimedata.txt','r')
+				for line in f:
+					print(line)
+					self.rfdThread.newCommandText.emit(line)
+				f.close()
+			except:
+				print("Error reading piruntimedata.txt")
+				self.rfdThread.newCommandText.emit("Error reading piruntimedata.txt")
+				
+			sys.stdout.flush()
+			return
 					
 	def updateRFDCommandsText(self,text):
 		""" Update the RFD Commands text browser with the provided text """
@@ -1825,15 +1985,20 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		to the ones known. Updates the browsers in the payloads tabs as well
 		"""
 		global payloadList
+		print("Entered")
+		print(received)
 		
 		### Go through each payload in the payload list, and see if this message is from a known payload. Make a new payload if necessary ###
 		knownPayload = False
 		for each in payloadList:
+			print(each)
 			if each.getName() == received.split(';')[0]:			# If there is a payload with the identifier in the message, add it to the payload
+				print("Here")
 				each.addMessage(received.split(';')[1][:-2])
 				knownPayload = True
+		
 		if not knownPayload:
-			if len(received.split(';')) == 2 and len(received.split(';')[0]) == 2:		# If there is a new identifier, make a new payload and add the message to it
+			if len(received.split(';')) == 2:												# If there is a new identifier, make a new payload and add the message to it
 				print("Made new Payload: " + received.split(';')[0])
 				temp = self.tabs.currentIndex()
 				self.tabs.setCurrentIndex(4)															# Change the current tab index to the payloads tab (to make sure the focus is right when making new layouts and placing them)
@@ -1878,6 +2043,8 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 	def createNewPayload(self,name,msg):
 		""" Make a new payload, add the message received to it, and create the proper display windows in the payloads tab """
 		global payloadList
+		print("Create Payload")
+		print(name,msg)
 		
 		# Make the payload label
 		newPayloadLabelName = "payloadLabel"+str(len(payloadList)+1)
@@ -2326,7 +2493,8 @@ def moveToCenterPos():
 	
 	print "Starting serial communication with",servoCOM
 	if servoAttached:
-		moveToTarget(0,0)
+		moveTiltServo(127)
+		movePanServo(127)
 		print "Move to Center Command Sent via", servoCOM
 	else:
 		print "Error: Settings set to no Servo Connection"
@@ -2392,7 +2560,7 @@ def moveToTarget(bearing,elevation):
 	# Update the globals
 	antennaBear = bearing
 	antennaEle = elevation
-						
+	
 def setServoAccel():
 	""" Sets the rate at which the servos accelerate """
 	global servoCOM, servoBaud, servoTimeout

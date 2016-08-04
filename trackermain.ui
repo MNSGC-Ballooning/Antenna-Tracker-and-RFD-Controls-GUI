@@ -1442,6 +1442,25 @@
                  </property>
                 </widget>
                </item>
+               <item>
+                <widget class="QPushButton" name="getPiRuntimeDataButton">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Get Runtime Data</string>
+                 </property>
+                </widget>
+               </item>
               </layout>
              </widget>
             </item>
@@ -1512,40 +1531,6 @@
                  </property>
                  <property name="text">
                   <string>Most Recent Image</string>
-                 </property>
-                 <property name="flat">
-                  <bool>false</bool>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="0">
-                <widget class="QLineEdit" name="requestedImageDataName">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="font">
-                  <font>
-                   <pointsize>10</pointsize>
-                  </font>
-                 </property>
-                 <property name="placeholderText">
-                  <string>imagedata</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="1">
-                <widget class="QPushButton" name="imageDataTxtButton">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string>Select Image</string>
                  </property>
                  <property name="flat">
                   <bool>false</bool>
@@ -1623,6 +1608,22 @@
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0" colspan="2">
+                <widget class="QPushButton" name="imageDataTxtButton">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Select Image</string>
+                 </property>
+                 <property name="flat">
+                  <bool>false</bool>
                  </property>
                 </widget>
                </item>
@@ -1997,7 +1998,7 @@
                <enum>QFrame::Raised</enum>
               </property>
               <layout class="QGridLayout" name="gridLayout_20">
-               <item row="0" column="0" colspan="2">
+               <item row="1" column="0" colspan="2">
                 <widget class="QPushButton" name="picDefaultSettingsButton">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -2010,7 +2011,7 @@
                  </property>
                 </widget>
                </item>
-               <item row="1" column="0">
+               <item row="2" column="0">
                 <widget class="QPushButton" name="picSendNewSettingsButton">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -2023,7 +2024,7 @@
                  </property>
                 </widget>
                </item>
-               <item row="1" column="1">
+               <item row="2" column="1">
                 <widget class="QPushButton" name="picGetSettingsButton">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -2036,7 +2037,7 @@
                  </property>
                 </widget>
                </item>
-               <item row="2" column="0" colspan="2">
+               <item row="3" column="0" colspan="2">
                 <widget class="QPushButton" name="connectionTestButton">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -2049,6 +2050,20 @@
                  </property>
                  <property name="flat">
                   <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="0">
+                <widget class="QPushButton" name="picHorizontalFlipButton">
+                 <property name="text">
+                  <string>Horizontal Flip</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QPushButton" name="picVerticalFlipButton">
+                 <property name="text">
+                  <string>Vertical Flip</string>
                  </property>
                 </widget>
                </item>

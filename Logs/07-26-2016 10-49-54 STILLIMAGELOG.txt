@@ -1,7 +1,0 @@
-07/26/2016 10:49:56,toggle,Still Image System Turned On
-07/26/2016 10:50:06,newText,Waiting for Acknowledge
-07/26/2016 10:50:08,newText,Waiting for Acknowledge
-07/26/2016 10:50:10,newText,Waiting for Acknowledge
-07/26/2016 10:50:10,newText,Image will be saved as: image0001_b.jpg @ time(05/19/2016 22:21:00) settings(w=650,h=450,sh=0,b=50,c=0,sa=0,i=400)
-
-07/26/2016 10:51:15,toggle,Still Image System Turned Off

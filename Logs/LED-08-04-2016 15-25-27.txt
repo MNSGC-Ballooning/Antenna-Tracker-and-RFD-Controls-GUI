@@ -1,0 +1,4 @@
+Message,15:24:09,Blinking 5 times
+Message,15:24:21,Blinking 10 times
+Message,15:24:41,Blinking 20 times
+Message,15:25:02,Done blinking

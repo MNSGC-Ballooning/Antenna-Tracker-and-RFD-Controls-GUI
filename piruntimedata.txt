@@ -1,0 +1,48 @@
+Started at @  2016-08-04 14:22:10.739569
+RT: 0 Watching Serial
+Taking Picture
+RT: 3 Watching Serial
+Camera Settings Read
+RT: 6 Watching Serial
+('Command: ', '7')
+Attempting to send piruntimedata
+piruntimedata.txt sent
+RT: 7 Watching Serial
+('Command: ', '7')
+Attempting to send piruntimedata
+AStarted at @  2016-08-04 14:22:10.739569
+RT: 0 Watching Serial
+Taking Picture
+RT: 3 Watching Serial
+Camera Settings Read
+RT: 6 Watching Serial
+('Command: ', '7')
+Attempting to send piruntimedata
+piruntimedata.txt sent
+RT: 7 Watching Serial
+('Command: ', '7')
+Attempting to send piruntimedata
+piruntimedata.txt sent
+RT: 7 Watching Serial
+('Command: ', '7')
+Attempting to send piruntimedata
+AStarted at @  2016-08-04 14:22:10.739569
+RT: 0 Watching Serial
+Taking Picture
+RT: 3 Watching Serial
+Camera Settings Read
+RT: 6 Watching Serial
+('Command: ', '7')
+Attempting to send piruntimedata
+piruntimedata.txt sent
+RT: 7 Watching Serial
+('Command: ', '7')
+Attempting to send piruntimedata
+piruntimedata.txt sent
+RT: 7 Watching Serial
+('Command: ', '7')
+Attempting to send piruntimedata
+piruntimedata.txt sent
+RT: 7 Watching Serial
+('Command: ', '7')
+Attempting to send piruntimedata
