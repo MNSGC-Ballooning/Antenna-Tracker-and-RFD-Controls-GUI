@@ -278,7 +278,7 @@
         <enum>QTabWidget::West</enum>
        </property>
        <property name="currentIndex">
-        <number>2</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="Settings">
         <attribute name="title">
@@ -918,6 +918,16 @@
                     </property>
                    </widget>
                   </item>
+                  <item row="2" column="0">
+                   <widget class="QCheckBox" name="internetCheckBox">
+                    <property name="text">
+                     <string>Internet Access</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
                  </layout>
                 </widget>
                </item>
@@ -1103,6 +1113,16 @@
             </item>
            </layout>
           </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="MapView">
+        <attribute name="title">
+         <string>Map View</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_22">
+         <item row="0" column="0">
+          <layout class="QGridLayout" name="mapViewGridLayout"/>
          </item>
         </layout>
        </widget>

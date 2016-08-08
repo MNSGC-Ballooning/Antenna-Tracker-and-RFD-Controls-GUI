@@ -11,11 +11,12 @@
 #################################################################################################################################
 
 from ui_trackermain import Ui_MainWindow
-import PySide
-from PySide import QtCore, QtGui
-from PySide.QtCore import *
-from PySide.QtGui import QApplication, QMainWindow, QTextEdit, QPushButton, QMessageBox, QLabel, QPixmap
-from PySide.QtGui import *
+import PyQt4
+from PyQt4 import QtCore, QtGui
+from PyQt4.QtWebKit import *
+from PyQt4.QtCore import *
+from PyQt4.QtGui import QApplication, QMainWindow, QTextEdit, QPushButton, QMessageBox, QLabel, QPixmap
+from PyQt4.QtGui import *
 import geomag
 import sys
 import os
@@ -36,7 +37,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 
 matplotlib.use('Qt4Agg')
-matplotlib.rcParams['backend.qt4']='PySide'
+matplotlib.rcParams['backend.qt4']='PyQt4'
 
 import ast
 
@@ -162,6 +163,8 @@ rfdListenOnline = False
 
 payloadList = []		# List of payloads in this flight
 currentBalloon = None
+mapMade = False
+googleMapsApiKey = 'AIzaSyDxwliW8hKUg072nJcVn3TtWlSEmY9rEvA'
 
 # Save Data Boolean
 saveData = False
@@ -170,7 +173,14 @@ saveData = False
 db_host = "153.90.202.51"
 db_user = "scott"
 db_passwd = "Jewe1947"
-db_name = "freemanproject"
+db_name = "freemanproject"			
+
+class WebView(PyQt4.QtWebKit.QWebView):
+    def javaScriptConsoleMessage(self, message, line, source):
+        if source:
+            print('line(%s) source(%s): %s' % (line, source, message))
+        else:
+            print(message)
 
 class BalloonUpdate(object):
 	"""
@@ -240,6 +250,11 @@ class Payload:
 		self.newGPSUpdates = []
 		self.messageBrowser = messageBrowser
 		self.gpsBrowser = gpsBrowser
+		self.map = False
+		self.newLocation = False
+		self.lat = 0.00
+		self.lon = 0.00
+		self.alt = 0.00
 
 	def getName(self):		# Returns the payload name
 		return self.name
@@ -249,11 +264,31 @@ class Payload:
 		if len(temp.getMessage().split(',')) == 5:		# GPS Updates are always comma separated with a length of 5
 			self.gpsUpdates.append(temp)
 			self.newGPSUpdates.append(temp)
+			self.time = temp.getMessage().split(',')[0]
+			self.lat = temp.getMessage().split(',')[1]
+			self.lon = temp.getMessage().split(',')[2]
+			self.alt = temp.getMessage().split(',')[3]
+			self.sat = temp.getMessage().split(',')[4]
+			self.newLocation = True
 		else:
 			self.messages.append(temp)
 			self.newMessages.append(temp)
 		return 1
 
+	def addWebview(self, webview):
+		self.webview = webview
+		self.map = True
+		
+	def updateMap(self):
+		self.webview.setHtml(getMapHtml(self.lat,self.lon))
+		self.newLocation = False
+		
+	def hasMap(self):
+		return self.map
+		
+	def inNewLocation(self):
+		return self.newLocation
+		
 	def getGPSUpdates(self):			# Returns the list of GPS Updates
 		return self.gpsUpdates
 
@@ -308,15 +343,14 @@ class Unbuffered:
 
 class Worker (QtCore.QObject):
 	""" A class to hold a function that will be run in a separate thread """
-	start = Signal(str)
-	finished = Signal()
+	start = pyqtSignal(str)
+	finished = pyqtSignal()
 	
 	def __init__(self, function, *args, **kwargs):
 		super(Worker, self).__init__()
 		self.function = function
 		self.args = args
 		self.kwargs = kwargs
-		self.start.connect(self.run)		# The start method is the same as the run method
 		
 	def run(self):			# When run, runs the function
 		self.function(*self.args, **self.kwargs)
@@ -327,14 +361,14 @@ class RfdThread(QtCore.QThread):
 	various GUI objects that need to be updated from this side thread
 	"""
 	
-	newCommandText = Signal(str)
-	newStillText = Signal(str)
-	payloadUpdate = Signal(str)
-	newProgress = Signal(int,int)
-	newPicture = Signal(str)
-	newLocation = Signal(BalloonUpdate)
-	requestConfirmation = Signal(str)
-	newPicSliderValues = Signal()
+	newCommandText = pyqtSignal(str)
+	newStillText = pyqtSignal(str)
+	payloadUpdate = pyqtSignal(str)
+	newProgress = pyqtSignal(int,int)
+	newPicture = pyqtSignal(str)
+	newLocation = pyqtSignal(BalloonUpdate)
+	requestConfirmation = pyqtSignal(str)
+	newPicSliderValues = pyqtSignal()
 	
 	def __init__(self, parent=None):
 		super(RfdThread, self).__init__(parent)
@@ -344,7 +378,7 @@ class DataThread(QtCore.QThread):
 	A class that inherits QThread. Has signals needed to update the balloon location
 	"""
 
-	newLocation = Signal(BalloonUpdate)
+	newLocation = pyqtSignal(BalloonUpdate)
 
 	def __init__(self,parent=None):
 		super(DataThread, self).__init__(parent)
@@ -354,14 +388,17 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 	def __init__(self, parent=None):
 		global rfdCOM, servoCOM, ardCOM, currentBalloon
 		super(MainWindow, self).__init__(parent)
-		self.setupUi(self)							# Uses the GUI built in QtCreator and interpreted using PySide to add all of the widgets to the window
+		self.setupUi(self)							# Uses the GUI built in QtCreator and interpreted using PyQt4 to add all of the widgets to the window
 		
 		### Worker Thread Setup ###
 		self.threadPool = []				# To hold the threads to be double sure they never get garbage collected and eliminated
 		self.rfdThread = RfdThread()
+		self.rfdThread.daemon = True
 		self.iridiumThread = DataThread()
-		self.aprsThread = DataThread()		
-		# Signal Connections from Side Threads
+		self.iridiumThread.daemon = True
+		self.aprsThread = DataThread()
+		self.aprsThread.daemon = True
+		# pyqtSignal Connections from Side Threads
 		self.rfdThread.newCommandText.connect(self.updateRFDCommandsText)
 		self.rfdThread.newStillText.connect(self.updateStillImageSystemText)
 		self.rfdThread.payloadUpdate.connect(self.updatePayloads)
@@ -436,7 +473,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		self.picISOSlider.valueChanged.connect(self.updatePicSliderValues)
 		
 		### Graph Setup ###
-		self.figure = Figure()		
+		self.figure = Figure()
 		self.canvas = FigureCanvas(self.figure)
 		layout = QtGui.QVBoxLayout()
 		layout.addWidget(self.canvas)
@@ -471,6 +508,8 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		self.antennaOnline(update)
 		self.refresh(update)
 		currentBalloon = update
+		if(internetAccess and mapMade):
+			self.mapView.setHtml(getMapHtml(update.getLat(),update.getLon()))
 	
 	def updateIncoming(self,row,column,value):
 		""" Update the Incoming GPS Data grid with the newest values """
@@ -557,13 +596,12 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		global centerBear, getLocal, manualLocal, calibrationGoal, centerBearSet
 		global groundLat, groundLon, groundAlt
 		global servoCOM, rfdCOM, arduinoCOM, aprsCOM
-		global simDate, simStartAlt
-		global simDate, simStartAlt
 		global s
 		global receivedTime, receivedLat, receivedLon, receivedAlt, bearingLog, elevationLog, losLog
 		global callsign, IMEI
 		global saveData, rfdLog, stillImageLog, balloonLocationLog, pointingLog
 		global iridiumInterrupt, aprsInterrupt, aprsStarted, iridiumStarted
+		global internetAccess, mapMade
 		
 		settingsUpdated = True		# Used by the refresh function (which is on a timer), to see if you've updated at least once (to basically get started)
 		
@@ -586,6 +624,19 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			f.close()
 		elif(not self.saveDataCheckbox.isChecked()):
 			saveData = False
+			
+		### Determine if there's internet Access for the maps ###
+		if(self.internetCheckBox.isChecked()):
+			internetAccess = True
+			
+			### Set up the Map View ###
+			if(not mapMade):
+				self.mapView = WebView()
+				self.mapView.setHtml(getMapHtml(45,-93))
+				self.mapViewGridLayout.addWidget(self.mapView)
+			mapMade = True
+		else:
+			internetAccess = False
 		
 		### Check to see what COM ports are in use, and assign them their values from the entry boxes ###
 		servoAttached = self.servoAttached.isChecked()
@@ -595,32 +646,32 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		# Use the placeholder values if there is nothing entered in the box, but the checkbox says it's connected
 		if(self.servoAttached.isChecked()):
 			if(not self.servoCOM.text() == ""):
-				servoCOM = self.servoCOM.text()
+				servoCOM = str(self.servoCOM.text())
 				setServoAccel()
 				setServoSpeed()
 		if(self.rfdAttached.isChecked()):
 			if(not self.rfdCOM.text() == ""):
-				rfdCOM = self.rfdCOM.text()
+				rfdCOM = str(self.rfdCOM.text())
 		if(self.arduinoAttached.isChecked()):
 			if(not self.arduinoCOM.text() == ""):
-				arduinoCOM = self.arduinoCOM.text()
+				arduinoCOM = str(self.arduinoCOM.text())
 		if(self.aprsAttached.isChecked()):
 			if(self.aprsCallsign.text() == ""):				# Get the APRS callsign too, default to placeholder
-				callsign = self.aprsCallsign.placeholderText()
+				callsign = str(self.aprsCallsign.placeholderText())
 			else:
 				callsign = self.aprsCallsign.text()
 			if(not self.aprsCOM.text() == ""):
-				aprsCOM = self.aprsCOM.text()
+				aprsCOM = str(self.aprsCOM.text())
 				
 		# Get the IMEI for the iridium modem, default to placeholder
 		if(self.iridiumIMEI.text() == ''):
-			IMEI = self.iridiumIMEI.placeholderText()
+			IMEI = str(self.iridiumIMEI.placeholderText())
 		else:
-			IMEI = self.iridiumIMEI.text()
+			IMEI = str(self.iridiumIMEI.text())
 		
 		# Set the calibration goal based on the entry box
 		if(self.calibrationGoalVal.text() == ""):
-			calibrationGoal = self.calibrationGoalVal.placeholderText()
+			calibrationGoal = str(self.calibrationGoalVal.placeholderText())
 		else:
 			calibrationGoal = int(ast.literal_eval(self.calibrationGoalVal.text()))
 		
@@ -874,6 +925,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		if arg == 'mostRecent':
 			rfdWorker = Worker(self.getMostRecentImage)		# Create an instance of the Worker class, and pass in the function you need
 			rfdWorker.moveToThread(self.rfdThread)		# Move the new class to the thread you created
+			rfdWorker.start.connect(rfdWorker.run)
 			rfdWorker.start.emit("hello")		# Start it up and say something to confirm
 			self.rfdWorker = rfdWorker
 			
@@ -898,36 +950,42 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 
 			rfdWorker = Worker(self.getImageDataTxt)		# Create an instance of the Worker class, and pass in the function you need
 			rfdWorker.moveToThread(self.rfdThread)		# Move the new class to the thread you created
+			rfdWorker.start.connect(rfdWorker.run)
 			rfdWorker.start.emit("hello")		# Start it up and say something to confirm
 			self.rfdWorker = rfdWorker
 			
 		if arg == 'getPicSettings':
 			rfdWorker = Worker(self.picGetSettings)		# Create an instance of the Worker class, and pass in the function you need
 			rfdWorker.moveToThread(self.rfdThread)		# Move the new class to the thread you created
+			rfdWorker.start.connect(rfdWorker.run)
 			rfdWorker.start.emit("hello")		# Start it up and say something to confirm
 			self.rfdWorker = rfdWorker
 			
 		if arg == 'sendNewSettings':
 			rfdWorker = Worker(self.picSendNewSettings)		# Create an instance of the Worker class, and pass in the function you need
 			rfdWorker.moveToThread(self.rfdThread)		# Move the new class to the thread you created
+			rfdWorker.start.connect(rfdWorker.run)
 			rfdWorker.start.emit("hello")		# Start it up and say something to confirm
 			self.rfdWorker = rfdWorker
 			
 		if arg == 'HFlip':
 			rfdWorker = Worker(self.picHorizontalFlip)
 			rfdWorker.moveToThread(self.rfdThread)
+			rfdWorker.start.connect(rfdWorker.run)
 			rfdWorker.start.emit('hello')
 			self.rfdWorker = rfdWorker
 			
 		if arg == 'VFlip':
 			rfdWorker = Worker(self.picVerticalFlip)
 			rfdWorker.moveToThread(self.rfdThread)
+			rfdWorker.start.connect(rfdWorker.run)
 			rfdWorker.start.emit('hello')
 			self.rfdWorker = rfdWorker
 			
 		if arg == 'timeSync':
 			rfdWorker = Worker(self.time_sync)		# Create an instance of the Worker class, and pass in the function you need
 			rfdWorker.moveToThread(self.rfdThread)		# Move the new class to the thread you created
+			rfdWorker.start.connect(rfdWorker.run)
 			rfdWorker.start.emit("hello")		# Start it up and say something to confirm
 			self.rfdWorker = rfdWorker
 
@@ -939,9 +997,11 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			
 	def updatePicture(self,displayPath):
 		""" Updates the still image system picture display to the picture associated with the path passed in as the argument """
-		pm = QPixmap(str(displayPath))		# Create a pixmap of the image
-		self.picLabel.setPixmap(pm)			# Set the label to the pixmap
-		self.picLabel.show()				# Display the image
+		print("Updating Picture")
+		pm = QPixmap(str(displayPath))		# Create a pixmap from the default image
+		scaledPm = pm.scaled(self.picLabel.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation)		# Scale the pixmap
+		self.picLabel.setPixmap(scaledPm)			# Set the label to the map
+		self.picLabel.show()				# Show the image
 		if saveData:						# If data logging is on, log the new path
 			logData('stillImage','newPic'+','+displayPath)
 			
@@ -1100,10 +1160,9 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		except:
 			print("No window to delete, or failed to delete window")
 		
-		print("Entered")
-		print(threading.current_thread().name)
 		rfdWorker = Worker(lambda: self.getRequestedImage(data))		# Create an instance of the Worker class, and pass in the function you need
 		rfdWorker.moveToThread(self.rfdThread)		# Move the new class to the thread you created
+		rfdWorker.start.connect(rfdWorker.run)
 		rfdWorker.start.emit("hello")		# Start it up and say something to confirm
 		self.rfdWorker = rfdWorker
 
@@ -1311,7 +1370,8 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			### Continue sending 5 until the acknowledge is received from the Pi ###
 			rfdSer.write('5')
 			timeCheck = time.time() + 1
-			while (rfdSer.read() != 'A'):
+			termtime = time.time() + 10
+			while (rfdSer.read() != 'A' and time.time() < termtime):
 				if(timeCheck < time.time()):
 					print "Waiting for Acknowledge"
 					self.rfdThread.newStillText.emit("Waiting for Acknowledge")
@@ -1587,7 +1647,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			else:							# If everything goes well, reset the try counter, and add the word to the accumulating final wor
 				trycnt = 0
 				rfdSer.write('Y')
-				finalstring += word
+				finalstring += str(word)
 				stillProgress += wordlength
 				self.rfdThread.newProgress.emit(stillProgress,stillPhotoMax)
 			if(len(finalstring) % 1000 != 0):			# The words always come in increments of some thousand, so if it's not evenly divisible, you're probably at the end
@@ -1595,8 +1655,8 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				break
 		### Save the image as the given filename in the Images folder
 		try:
-			b64_to_image(finalstring,"Images/"+savepath)			# Decode the image
-			displayPhotoPath = "Images/"+savepath
+			b64_to_image(finalstring,"Images/"+str(savepath))			# Decode the image
+			displayPhotoPath = "Images/"+str(savepath)
 			self.rfdThread.newPicture.emit(displayPhotoPath)		# Send the signal with the new image location to the main GUI
 		except:
 			print "Error with filename, saved as newimage" + extension
@@ -1663,14 +1723,14 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		avg = 0
 		
 		### Using the specifified number of pings, give the Pi 10 seconds per ping to respond correctly, and record the times ###
-		rfdSer.write('P')
+		rfdSer.write('~')
 		temp = ""
 		for x in range (1,numping):
 			sendtime = time.time()
 			receivetime = 0
 			termtime = sendtime + 10
-			while ((temp != 'P')&(time.time()<termtime)):	# Loop until you get a P back, or too much time has passed
-				rfdSer.write('P')
+			while ((temp != '~')&(time.time()<termtime)):	# Loop until you get a P back, or too much time has passed
+				rfdSer.write('~')
 				temp = rfdSer.read()
 				receivetime = time.time()
 				if (receivetime == 0):	# If too much time has passed and no valid response, print the error, write D, and return
@@ -1740,6 +1800,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				# Starts the rfdListen function in the side thread so that it doesn't interrupt the main loop
 				rfdWorker = Worker(self.rfdListen)		# Create an instance of the Worker class, and pass in the function you need
 				rfdWorker.moveToThread(self.rfdThread)		# Move the new class to the thread you created
+				rfdWorker.start.connect(rfdWorker.run)
 				rfdWorker.start.emit("hello")		# Start it up and say something to confirm
 				self.rfdWorker = rfdWorker
 				
@@ -1764,12 +1825,12 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				
 				### Loop until interrupted; handle anything received by the RFD ###
 				while(not listenInterrupt):
-					line = rfdSer.readline()
+					line = str(rfdSer.readline())
 					if(line != ''):				# Send the line to the text browser if it's not empty
 						self.rfdThread.newCommandText.emit(datetime.today().strftime('%H:%M:%S') + " || "+line)
 					self.rfdThread.payloadUpdate.emit(line)			# Send it to the payload manager
 					if(line[0:3] == "GPS" and len(line[4:].split(','))==7):		# If the line received has the GPS identifier, handle it as a newly received RFD balloon location update
-						print(line[0:3],line[4:])
+						# print(line[0:3],line[4:])
 						line = line.split(',')
 						line[0] = line[0][4:]
 						if(useRFD):
@@ -1803,6 +1864,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 					# Start up the rfdCommandsControl function in the worker thread so that it doesn't get in the way of the main loop
 					rfdWorker = Worker(self.rfdCommandsControl)		# Create an instance of the Worker class, and pass in the function you need
 					rfdWorker.moveToThread(self.rfdThread)		# Move the new class to the thread you created
+					rfdWorker.start.connect(rfdWorker.run)
 					rfdWorker.start.emit("hello")		# Start it up and say something to confirm
 					self.rfdWorker = rfdWorker
 
@@ -1823,7 +1885,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 	def rfdCommandsControl(self):
 		""" Handles the RFD Commands """
 		global rfdCOM, rfdBaud, rfdTimeout, rfdCommandsOnline, commandInterrupt
-	
+
 		if rfdCommandsOnline:		# Make sure the commands are online
 			if(rfdAttached):		# Only try to do stuff if there's an RFD Attached
 				
@@ -1867,7 +1929,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				final = ''
 				done = False
 				while(not done and not commandInterrupt):		# If the interrupt is used, break the loop
-					final = rfdSer.readline()
+					final = str(rfdSer.readline())
 					print(final)
 					if (final.split(';')[0] == identifier):
 						if final.find('!') != -1:
@@ -1903,6 +1965,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			
 		rfdWorker = Worker(self.getPiRuntimeData)
 		rfdWorker.moveToThread(self.rfdThread)
+		rfdWorker.start.connect(rfdWorker.run)
 		rfdWorker.start.emit("hello")
 		self.rfdWorker = rfdWorker
 			
@@ -1985,32 +2048,31 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		to the ones known. Updates the browsers in the payloads tabs as well
 		"""
 		global payloadList
-		print("Entered")
-		print(received)
 		
 		### Go through each payload in the payload list, and see if this message is from a known payload. Make a new payload if necessary ###
 		knownPayload = False
 		for each in payloadList:
-			print(each)
-			if each.getName() == received.split(';')[0]:			# If there is a payload with the identifier in the message, add it to the payload
+			if each.getName() == str(received.split(';')[0]):			# If there is a payload with the identifier in the message, add it to the payload
 				print("Here")
-				each.addMessage(received.split(';')[1][:-2])
+				each.addMessage(str(received.split(';')[1][:-2]))
 				knownPayload = True
 		
 		if not knownPayload:
 			if len(received.split(';')) == 2:												# If there is a new identifier, make a new payload and add the message to it
-				print("Made new Payload: " + received.split(';')[0])
+				print("Made new Payload: " + str(received.split(';')[0]))
 				temp = self.tabs.currentIndex()
 				self.tabs.setCurrentIndex(4)															# Change the current tab index to the payloads tab (to make sure the focus is right when making new layouts and placing them)
-				self.createNewPayload(received.split(';')[0],received.split(';')[1][:-2])				# Make the new payload
+				self.createNewPayload(str(received.split(';')[0]),str(received.split(';')[1][:-2]))				# Make the new payload
 				self.tabs.setCurrentIndex(temp)															# Switch back to the tab you were on before it was made
 		
-		### Update the text browsers in the payloads tab for each payload ###
+		### Update the text browsers and maps in the payloads tab for each payload ###
 		for each in payloadList:
 			for line in each.getNewMessages():
-				each.getMessageBrowser().append(line.getTimestamp() + "||" + line.getMessage())
+				each.getMessageBrowser().append(line.getTimestamp() + " || " + line.getMessage())
 			for line in each.getNewGPSUpdates():
-				each.getGPSBrowser().append(line.getTimestamp() + "||" + line.getMessage())
+				each.getGPSBrowser().append(line.getTimestamp() + " || " + line.getMessage())
+			if(each.hasMap() and each.inNewLocation()):
+				each.updateMap()
 		
 	def changeTextColor(self, obj, color):
 		""" Changes the color of a text label to either red or green """
@@ -2046,6 +2108,11 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		print("Create Payload")
 		print(name,msg)
 		
+		if(len(payloadList) == 0):
+			self.payloadTabs = QtGui.QTabWidget()
+			self.payloadTabs.setStyleSheet('QTabBar { font-size: 18pt; font-family: MS Shell Dlg 2; }')
+			self.payloadTabGridLayout.addWidget(self.payloadTabs)
+		
 		# Make the payload label
 		newPayloadLabelName = "payloadLabel"+str(len(payloadList)+1)
 		self.newPayloadLabel = QtGui.QLabel()
@@ -2054,37 +2121,54 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		newPayloadMessagesLabelName = "payload"+str(len(payloadList)+1)+"MessagesLabel"
 		self.newPayloadMessagesLabel = QtGui.QLabel()
 		self.newPayloadMessagesLabel.setText("Messages")
+		self.newPayloadMessagesLabel.setFont(QtGui.QFont('MS Shell Dlg 2',16))
 		# Make the payload GPS Updates Label
 		newPayloadGPSUpdatesLabelName = "payload"+str(len(payloadList)+1)+"GPSLabel"
 		self.newPayloadGPSLabel = QtGui.QLabel()
 		self.newPayloadGPSLabel.setText("GPS Updates")
+		self.newPayloadGPSLabel.setFont(QtGui.QFont('MS Shell Dlg 2',16))
 		# Make the Messages Browser
 		newPayloadMessagesBrowserName = "payloadMessagesBrower"+str(len(payloadList)+1)
 		self.newPayloadMessagesBrowser = QtGui.QTextBrowser()
+		self.newPayloadMessagesBrowser.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
 		# Make the GPS Updates Browser
 		newPayloadGPSBrowserName = "payloadGPSBrowser"+str(len(payloadList)+1)
 		self.newPayloadGPSBrowser = QtGui.QTextBrowser()
 		self.newPayloadGPSBrowser.setObjectName(newPayloadGPSBrowserName)
+		self.newPayloadGPSBrowser.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
 		# Make the grid layout and add elements to it
 		newGridName = "payloadGridLLayout"+str(len(payloadList)+1)
 		self.newGrid = QtGui.QGridLayout()
-		# self.newGrid.setObjectName(newGridName)
+		self.newGrid.setObjectName(newGridName)
 		self.newGrid.addWidget(self.newPayloadMessagesLabel,0,0,1,1)
 		self.newGrid.addWidget(self.newPayloadGPSLabel,0,1,1,1)
 		self.newGrid.addWidget(self.newPayloadMessagesBrowser,1,0,1,1)
-		self.newGrid.addWidget(self.newPayloadGPSBrowser,1,1,1,1)
-		# Make the vertical layout and add elements to it
-		newVerticalName = "payloadVerticalLayout"+str(len(payloadList)+1)
-		self.newVertical = QtGui.QVBoxLayout()
-		# self.newVertical.setObjectName(newVerticalName)
-		self.newVertical.addWidget(self.newPayloadLabel)
-		self.newVertical.addLayout(self.newGrid)
-		# Add the vertical layout to the larger grid layout on the Payloads tab in the correct location
-		payloadGridRow = (len(payloadList)+1)/2
-		payloadGridColumn = (len(payloadList)+1)%2
-		self.payloadTabGridLayout.addLayout(self.newVertical,payloadGridRow,payloadGridColumn,1,1)
-		# Make the new payload object, add the message, and add it to the payload List
-		newPayload = Payload(name, self.newPayloadMessagesBrowser, self.newPayloadGPSBrowser)
+		
+		if(internetAccess):			# Only make the map if you have internet access
+			# Make the QWebView
+			newPayloadWebViewName = 'payloadWebView'+str(len(payloadList)+1)
+			self.newPayloadWebView = WebView()
+			self.newPayloadWebView.setObjectName(newPayloadWebViewName)
+			self.newPayloadWebView.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Expanding)
+			# Make a Vertical Layout for the GPS Browser and Webview
+			self.newPayloadVertical = QtGui.QVBoxLayout()
+			self.newPayloadVertical.addWidget(self.newPayloadGPSBrowser)
+			self.newPayloadVertical.addWidget(self.newPayloadWebView)
+			self.newGrid.addLayout(self.newPayloadVertical,1,1,1,1)
+			self.newPayloadWebView.setHtml(str(getMapHtml(currentBalloon.getLat(),currentBalloon.getLon())))
+			
+		else:
+			self.newGrid.addWidget(self.newPayloadGPSBrowser,1,1,1,1)
+		
+		### Add the new objects to a new tab ###
+		self.tempWidget = QWidget()
+		self.tempWidget.setLayout(self.newGrid)
+		self.payloadTabs.addTab(self.tempWidget,name)
+		
+		newPayload = Payload(name, self.newPayloadMessagesBrowser, self.newPayloadGPSBrowser)		# Create the new payload
+		if(internetAccess):		# If there's internet, add the webview
+			newPayload.addWebview(self.newPayloadWebView)
+			
 		newPayload.addMessage(msg)
 		payloadList.append(newPayload)
 		
@@ -2470,6 +2554,73 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			print("Error closing APRS serial port")
 		aprsStarted = False
 		aprsInterrupt = False
+
+def getMapHtml(lat,lon):
+	maphtml = """
+	<!DOCTYPE html>
+	<html>
+	  <head>
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+		<meta charset="utf-8">
+		<title>Circles</title>
+		<style>
+		  html, body {
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		  }
+		  #map {
+			height: 100%;
+		  }
+		</style>
+	  </head>
+	  <body>
+		<div id="map"></div>
+		<script>
+		  // This example creates circles on the map
+
+		  // First, create an object containing LatLng and radius for each item.
+		  var balloon = {
+			payload: {
+			  center: {lat: """ + str(lat) + """, lng: """ + str(lon)+"""},
+			  rad: 3000
+			}
+		  };
+
+		  function initMap() {
+			// Create the map.
+			var map = new google.maps.Map(document.getElementById('map'), {
+			  zoom: 7,
+			  center: {lat: """+str(lat) + """, lng: """+str(lon)+"""},
+			  mapTypeId: 'terrain'
+			});
+
+			// Construct the circle for each value in balloon.
+			// Note: We scale the area of the circle based on the rad.
+			for (var each in balloon) {
+			  // Add the circle for this city to the map.
+			  var cityCircle = new google.maps.Circle({
+				strokeColor: '#FF0000',
+				strokeOpacity: 0.8,
+				strokeWeight: 2,
+				fillColor: '#FF0000',
+				fillOpacity: 0.35,
+				map: map,
+				center: balloon[each].center,
+				radius: Math.sqrt(balloon[each].rad) * 100
+			  });
+			}
+		  }
+		  
+		</script>
+		<script async defer
+		src="https://maps.googleapis.com/maps/api/js?key="""+str(googleMapsApiKey)+"""&callback=initMap">
+		</script>
+	  </body>
+	</html>
+	"""
+	return maphtml
+	
 	
 def stringToFloat(s):
 	""" Converts a string to a float, 0 = '' """
@@ -2749,7 +2900,6 @@ if __name__ == "__main__":
 			f.write("GPS" + ','+  str(one.getTimestamp())+','+str(one.getMessage()) + '\n')
 		f.close()
 		
-
 else:
 	print "Error Booting Gui"
 	while(1):
