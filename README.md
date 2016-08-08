@@ -22,7 +22,7 @@ Currently, this information is provided by an arduino nano with a adafruit GPS B
 ## Operation:
 
 -Connect your RFD, mini maestro, and arduino, and run the code through Spyder. Ports should autofill in the connections section. If you do not want to use the arduino/IMU, select the cardinal direction that your tracker is facing.
-Select your methods of autotrack, they can all be run simultaneously. Select if you'd like to save data and if you'd like to graph your tracking in the Graphing and Logging section.
+Select your methods of autotrack, they can all be run simultaneously. Select if you'd like to save data and if you'd like to graph your tracking in the Graphing and Logging section. Also choose whether or not you have internet access
 
 -Hit update settings, and the calibration window will appear. When the gyro, accelerometer, and magnetometer all display a value of 3, place your IMU back onto the tracker, and hit ready to get your location and center bearing.
 If you're using the RFD, go into the RFD tab and turn on RFD Listen by clicking the listen button. Press the launch antenna tracker button to begin tracking the most recent received balloon position.
