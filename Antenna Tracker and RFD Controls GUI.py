@@ -7,7 +7,7 @@
 #	   Purpose: To acquire the location of a balloon in flight, and aim the array of antennae at the balloon					#
 #	   Additional Features: RFD 900 based Command Center and Image Reception									 				#
 #	   Creation Date: March 2016																								#
-#	   Last Edit Date: July 24, 2016																							#
+#	   Last Edit Date: August 19, 2016																							#
 #################################################################################################################################
 
 from ui_trackermain import Ui_MainWindow
@@ -39,9 +39,6 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 matplotlib.use('Qt4Agg')
 matplotlib.rcParams['backend.qt4']='PyQt4'
 
-import ast
-
-
 ##########################
 #### GLOBAL VARIABLES ####
 ##########################
@@ -53,12 +50,7 @@ groundAlt = 0.00
 centerBear = 0.00
 antennaBear = 0.00
 antennaEle = 0.00
-calibrationGoal = 8
 moveIncrement = 2.0
-
-# Simulation Settings
-simDate = ""
-simStartAlt = ""
 
 # Booleans for Ground Station and Tracking Method settings
 settingsUpdated = False
@@ -79,32 +71,12 @@ iridiumInterrupt = False
 aprsInterrupt = False
 autotrackBlock = False
 calibrationReady = False
-
-# Serial Port Settings
-servoCOM = ""
-servoBaud = 9600
-servoTimeout = 0.5
-rfdCOM = ""
-rfdBaud = 38400
-rfdTimeout = 2
-arduinoCOM = ""
-arduinoBaud = 115200
-arduinoTimeout = 5
-aprsCOM = ""
-aprsBaud = 9600
-aprsTimeout = 5
-
-# Tracking Labels for APRS and Iridium
-callsign = ""		# For the EAGLE Flight Computer
-IMEI = ""			# For the Iridium Modem
+inSliderMode = False
 
 # use these to manually tweak the tracking (ie if its still off a little after aligning)
 panOffset = 0		  # increase to turn right, decrease to turn left
 tiltOffset = 0		  # increase to raise, decrease to lower
 previousPan = 127	   #Memory for last position (To account for backlash)
-
-# Slider Mode
-inSliderMode = False
 
 # Pololu servo controller commands using Mini SSC Protocol, 
 #  see: http://www.pololu.com/docs/0J40/5.c  
@@ -131,30 +103,6 @@ panRange = 360
 panAccel = 1
 panSpeed = 3
 
-#Graphing Arrays
-receivedTime = np.array([])
-receivedLat = np.array([])
-receivedLon = np.array([])
-receivedAlt = np.array([])
-losLog = np.array([])
-elevationLog = np.array([])
-bearingLog = np.array([])
-
-#Still Image System Variables
-stillImageOnline = False
-wordlength = 7000		  							# Variable to determine spacing of checksum. Ex. wordlength = 1000 will send one thousand bits before calculating and verifying checksum
-extension = ".jpg"
-displayPhotoPath = "Images/MnSGC_Logo_highRes.png"			# The starting display photo is the logo of the MnSGC
-
-#Picture Qualities
-picWidth = 650
-picHeight = 450
-picSharpness = 0
-picBrightness = 50
-picContrast = 0
-picSaturation = 0
-picISO = 400
-
 #RFD Commands Controls
 rfdCommandsOnline = False
 commandInterrupt = False
@@ -164,7 +112,7 @@ rfdListenOnline = False
 payloadList = []		# List of payloads in this flight
 currentBalloon = None
 mapMade = False
-googleMapsApiKey = 'AIzaSyDxwliW8hKUg072nJcVn3TtWlSEmY9rEvA'
+googleMapsApiKey = 'AIzaSyDxwliW8hKUg072nJcVn3TtWlSEmY9rEvA'		# https://developers.google.com/maps/documentation/javascript/get-api-key
 
 # Save Data Boolean
 saveData = False
@@ -176,11 +124,12 @@ db_passwd = "Jewe1947"
 db_name = "freemanproject"			
 
 class WebView(PyQt4.QtWebKit.QWebView):
-    def javaScriptConsoleMessage(self, message, line, source):
-        if source:
-            print('line(%s) source(%s): %s' % (line, source, message))
-        else:
-            print(message)
+	""" A class that allows messages from JavaScript being run in a QWebView to be printed """
+	def javaScriptConsoleMessage(self, message, line, source):
+		if source:
+			print('line(%s) source(%s): %s' % (line, source, message))
+		else:
+			print(message)
 
 class BalloonUpdate(object):
 	"""
@@ -202,9 +151,6 @@ class BalloonUpdate(object):
 		self.ele = elevationAngle(self.alt,groundAlt,distanceToTarget)
 		self.los = losDistance(self.alt,groundAlt,distanceToTarget)
 		self.magDec = geomag.declination(dlat = self.lat,dlon = self.lon, h = self.alt)
-
-		if saveData:		# Log the balloon location
-			logData("balloonLocation",self.trackingMethod+','+str(self.time)+','+str(self.lat)+','+str(self.lon)+','+str(self.alt)+','+str(self.bear)+','+str(self.ele)+','+str(self.los))
 
 	def getTime(self):
 		return self.time
@@ -328,6 +274,26 @@ class PayloadMessage:
 	def getTimestamp(self):			# Returns the timestamp
 		return self.timestamp
 
+class SerialDevice:
+	""" A class to manage serial devices """
+
+	def __init__(self,port,baud,timeout):
+		self.port = port
+		self.baud = baud
+		self.timeout = timeout
+
+	def getPort(self):
+		return self.port
+
+	def getBaud(self):
+		return self.baud
+
+	def getTimeout(self):
+		return self.timeout
+
+	def getDevice(self):
+		return serial.Serial(port = self.port, baudrate = self.baud, timeout = self.timeout)
+
 
 class Unbuffered:
 	""" A class to eliminate the serial buffer """
@@ -386,19 +352,20 @@ class DataThread(QtCore.QThread):
 class MainWindow(QMainWindow,Ui_MainWindow):
 	""" The Main GUI Window """
 	def __init__(self, parent=None):
-		global rfdCOM, servoCOM, ardCOM, currentBalloon
+		global currentBalloon
 		super(MainWindow, self).__init__(parent)
-		self.setupUi(self)							# Uses the GUI built in QtCreator and interpreted using PyQt4 to add all of the widgets to the window
+		self.setupUi(self)							# Uses the GUI built in QtCreator and interpreted using pyuic to add all of the widgets to the window
 		
 		### Worker Thread Setup ###
 		self.threadPool = []				# To hold the threads to be double sure they never get garbage collected and eliminated
 		self.rfdThread = RfdThread()
-		self.rfdThread.daemon = True
+		self.rfdThread.daemon = True 		# If you make a side thread's daemon True, it dies when the main GUI is killed
 		self.iridiumThread = DataThread()
 		self.iridiumThread.daemon = True
 		self.aprsThread = DataThread()
 		self.aprsThread.daemon = True
-		# pyqtSignal Connections from Side Threads
+
+		# Signal Connections from Side Threads
 		self.rfdThread.newCommandText.connect(self.updateRFDCommandsText)
 		self.rfdThread.newStillText.connect(self.updateStillImageSystemText)
 		self.rfdThread.payloadUpdate.connect(self.updatePayloads)
@@ -409,6 +376,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		self.rfdThread.newPicSliderValues.connect(self.updateStillImageValues)
 		self.iridiumThread.newLocation.connect(self.updateBalloonLocation)
 		self.aprsThread.newLocation.connect(self.updateBalloonLocation)
+
 		# Start the threads, they should run forever, and add them to the thread pool
 		self.rfdThread.start()
 		self.iridiumThread.start()
@@ -419,34 +387,34 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		
 		### Button Function Link Setup ###
 		self.updateSettings.clicked.connect(self.getSettings)
-		self.antennaCenter.clicked.connect(moveToCenterPos)
-		self.pointAtBalloon.clicked.connect(pointToMostRecentBalloon)
+		self.antennaCenter.clicked.connect(self.moveToCenterPos)
+		self.pointAtBalloon.clicked.connect(self.pointToMostRecentBalloon)
 		self.trackerLaunch.clicked.connect(self.setAutotrack)
 		self.recalibrateCenterBearing.clicked.connect(self.calibrateIMU)
 		self.checkComPorts.clicked.connect(self.searchComPorts)
-		self.autoDisabled.stateChanged.connect(self.disabledChecked)
-		self.autoIridium.stateChanged.connect(self.autotrackChecked)
-		self.autoAPRS.stateChanged.connect(self.autotrackChecked)
-		self.autoRFD.stateChanged.connect(self.autotrackChecked)
+
 		# Manual Entry Button Links
 		self.ManualEntryUpdateButton.clicked.connect(self.manualEntryUpdate)
 		self.ManualAngleEntryButton.clicked.connect(self.manualAngleEntryUpdate)
-		self.sliderButton.clicked.connect(lambda: self.sliderControl("click"))
+		self.sliderButton.clicked.connect(lambda: self.sliderControl("click"))				# lambda allows for passing an additional argument so one function can handle all the buttons
 		self.panServoSlider.valueChanged.connect(lambda: self.sliderControl("slide"))
 		self.tiltServoSlider.valueChanged.connect(lambda: self.sliderControl("slide"))
+
 		# Trim Button Links
 		self.trimUpButton.clicked.connect(lambda: self.trimControl('up'))
 		self.trimDownButton.clicked.connect(lambda: self.trimControl('down'))
 		self.trimLeftButton.clicked.connect(lambda: self.trimControl('left'))
 		self.trimRightButton.clicked.connect(lambda: self.trimControl('right'))
 		self.trimResetButton.clicked.connect(lambda: self.trimControl('reset'))
+
 		# RFD Control Links
 		self.rfdCommandButton.clicked.connect(self.rfdCommandsButtonPress)
 		self.rfdListenButton.clicked.connect(self.rfdListenButtonPress)
 		self.getPiRuntimeDataButton.clicked.connect(self.getPiRuntimeDataButtonPress)
+
 		# Still Image Control Links
-		self.stillImageOnlineButton.clicked.connect(self.ToggleStillImageSystem)
-		self.mostRecentImageButton.clicked.connect(lambda: self.stillImageButtonPress('mostRecent'))		# lambda allows for passing an additional argument so one function can handle all the buttons
+		self.stillImageOnlineButton.clicked.connect(self.toggleStillImageSystem)
+		self.mostRecentImageButton.clicked.connect(lambda: self.stillImageButtonPress('mostRecent'))
 		self.imageDataTxtButton.clicked.connect(lambda: self.stillImageButtonPress('selectImage'))
 		self.picDefaultSettingsButton.clicked.connect(self.picDefaultSettings)
 		self.picSendNewSettingsButton.clicked.connect(lambda: self.stillImageButtonPress('sendNewSettings'))
@@ -454,17 +422,38 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		self.connectionTestButton.clicked.connect(lambda: self.stillImageButtonPress('timeSync'))
 		self.picHorizontalFlipButton.clicked.connect(lambda: self.stillImageButtonPress('HFlip'))
 		self.picVerticalFlipButton.clicked.connect(lambda: self.stillImageButtonPress('VFlip'))
+
+		# Make sure the allowed combination of auto tracking checkboxes are enabled
+		self.autoDisabled.stateChanged.connect(self.disabledChecked)
+		self.autoIridium.stateChanged.connect(self.autotrackChecked)
+		self.autoAPRS.stateChanged.connect(self.autotrackChecked)
+		self.autoRFD.stateChanged.connect(self.autotrackChecked)
+
+		# Still Image System Variables
+		self.stillImageOnline = False
+		self.wordlength = 7000		  									# Variable to determine spacing of checksum. Ex. wordlength = 1000 will send one thousand bits before calculating and verifying checksum
+		self.extension = ".jpg"
+		self.displayPhotoPath = "Images/MnSGC_Logo_highRes.png"			# The starting display photo is the logo of the MnSGC
+
+		# Picture Qualities
+		self.picWidth = 650
+		self.picHeight = 450
+		self.picSharpness = 0
+		self.picBrightness = 50
+		self.picContrast = 0
+		self.picSaturation = 0
+		self.picISO = 400
 	
 		### Inital Still Image System Picture Display Setup ###
 		self.tabs.resizeEvent = self.resizePicture
 		self.picLabel.setScaledContents(True)
-		pm = QPixmap(displayPhotoPath)		# Create a pixmap from the default image
+		pm = QPixmap(self.displayPhotoPath)		# Create a pixmap from the default image
 		scaledPm = pm.scaled(self.picLabel.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation)		# Scale the pixmap
 		self.picLabel.setPixmap(scaledPm)			# Set the label to the map
 		self.picLabel.show()				# Show the image
 		
 		### Still Image Slider Updates ###
-		self.picWidthSlider.valueChanged.connect(self.updatePicSliderValues)
+		self.picWidthSlider.valueChanged.connect(self.updatePicSliderValues)			# These make sure the number next to the slider represents the slider value
 		self.picHeightSlider.valueChanged.connect(self.updatePicSliderValues)
 		self.picSharpSlider.valueChanged.connect(self.updatePicSliderValues)
 		self.picBrightSlider.valueChanged.connect(self.updatePicSliderValues)
@@ -478,7 +467,20 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		layout = QtGui.QVBoxLayout()
 		layout.addWidget(self.canvas)
 		self.graphWidget.setLayout(layout)
-		
+
+		# Tracking Labels for APRS and Iridium
+		self.callsign = ""		# For the EAGLE Flight Computer
+		self.IMEI = ""			# For the Iridium Modem
+
+		#Graphing Arrays
+		self.receivedTime = np.array([])
+		self.receivedLat = np.array([])
+		self.receivedLon = np.array([])
+		self.receivedAlt = np.array([])
+		self.losLog = np.array([])
+		self.elevationLog = np.array([])
+		self.bearingLog = np.array([])
+
 		### Determine Serial Connections ###
 		self.searchComPorts()
 		
@@ -521,7 +523,6 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		
 	def refresh(self,update):
 		""" Refreshs the info grids and plots with the newest values """
-		global receivedTime, receivedAlt, losLog, bearingLog, elevationLog
 		### Update the info grid with the newest balloon information ###
 		self.updateIncoming(0,0,update.getTime())
 		self.updateIncoming(0,1,update.getLat())
@@ -547,7 +548,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		
 		### Update the Graphs in the Tracker Tab
 		if(settingsUpdated and self.graphReal.isChecked()):						# Check to see if you have the graph checkbox selected
-			if len(receivedAlt) > 0:
+			if len(self.receivedAlt) > 0:
 
 				# creates the 4 subplots 
 				ALTPLOT = self.figure.add_subplot(221)
@@ -562,13 +563,13 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				BEARPLOT.hold(False)
 				
 				# plot data
-				ALTPLOT.plot(receivedTime-receivedTime[0],receivedAlt, 'r-')
+				ALTPLOT.plot(self.receivedTime-self.receivedTime[0],self.receivedAlt, 'r-')
 				ALTPLOT.set_ylabel('Altitude (ft)')
-				LOSPLOT.plot(receivedTime-receivedTime[0],losLog,'g-')
+				LOSPLOT.plot(self.receivedTime-self.receivedTime[0],self.losLog,'g-')
 				LOSPLOT.set_ylabel('Line-of-Sight (km)')
-				ELEPLOT.plot(receivedTime-receivedTime[0],elevationLog, 'b-')
+				ELEPLOT.plot(self.receivedTime-self.receivedTime[0],self.elevationLog, 'b-')
 				ELEPLOT.set_ylabel('Elevation Angle')
-				BEARPLOT.plot(receivedTime-receivedTime[0],bearingLog,'y-')
+				BEARPLOT.plot(self.receivedTime-self.receivedTime[0],self.bearingLog,'y-')
 				BEARPLOT.set_ylabel('Bearing Angle')
 
 				# refresh canvas
@@ -593,13 +594,10 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		""" Go through the settings tab and update class and global variables with the new settings """
 		global servoAttached, rfdAttached, arduinoAttached
 		global settingsUpdated, useIridium, useRFD, useAPRS
-		global centerBear, getLocal, manualLocal, calibrationGoal, centerBearSet
+		global centerBear, getLocal, manualLocal, centerBearSet
 		global groundLat, groundLon, groundAlt
-		global servoCOM, rfdCOM, arduinoCOM, aprsCOM
 		global s
-		global receivedTime, receivedLat, receivedLon, receivedAlt, bearingLog, elevationLog, losLog
-		global callsign, IMEI
-		global saveData, rfdLog, stillImageLog, balloonLocationLog, pointingLog
+		global saveData
 		global iridiumInterrupt, aprsInterrupt, aprsStarted, iridiumStarted
 		global internetAccess, mapMade
 		
@@ -607,21 +605,22 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		
 		### Determine whether or not to save the Data for this flight ###
 		if(self.saveDataCheckbox.isChecked()):
-			saveData = True
-			timestamp = str(datetime.today().strftime("%m-%d-%Y %H-%M-%S"))
-			# Files are saved in the Logs folder, with the timestamp first in the name, followed by the description of the type of data the file contains
-			rfdLog = "Logs/"+timestamp + ' ' + "RFDLOG.txt"
-			f = open(rfdLog,'w')
-			f.close()
-			stillImageLog = "Logs/"+timestamp + ' ' + "STILLIMAGELOG.txt"
-			f = open(stillImageLog,'w')
-			f.close()
-			balloonLocationLog = "Logs/"+timestamp + ' ' + "BALLOONLOCATIONLOG.txt"
-			f = open(balloonLocationLog,'w')
-			f.close()
-			pointingLog = "Logs/"+timestamp + ' ' + "POINTINGLOG.txt"
-			f = open(pointingLog,'w')
-			f.close()
+			if(not saveData):
+				saveData = True
+				timestamp = str(datetime.today().strftime("%m-%d-%Y %H-%M-%S"))
+				# Files are saved in the Logs folder, with the timestamp first in the name, followed by the description of the type of data the file contains
+				self.rfdLog = "Logs/"+timestamp + ' ' + "RFDLOG.txt"
+				f = open(self.rfdLog,'w')
+				f.close()
+				self.stillImageLog = "Logs/"+timestamp + ' ' + "STILLIMAGELOG.txt"
+				f = open(self.stillImageLog,'w')
+				f.close()
+				self.balloonLocationLog = "Logs/"+timestamp + ' ' + "BALLOONLOCATIONLOG.txt"
+				f = open(self.balloonLocationLog,'w')
+				f.close()
+				self.pointingLog = "Logs/"+timestamp + ' ' + "POINTINGLOG.txt"
+				f = open(self.pointingLog,'w')
+				f.close()
 		elif(not self.saveDataCheckbox.isChecked()):
 			saveData = False
 			
@@ -647,33 +646,31 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		if(self.servoAttached.isChecked()):
 			if(not self.servoCOM.text() == ""):
 				servoCOM = str(self.servoCOM.text())
-				setServoAccel()
-				setServoSpeed()
+				self.servos = SerialDevice(servoCOM,9600,0.5)
+				self.setServoAccel()
+				self.setServoSpeed()
 		if(self.rfdAttached.isChecked()):
 			if(not self.rfdCOM.text() == ""):
 				rfdCOM = str(self.rfdCOM.text())
+				self.RFD = SerialDevice(rfdCOM,38400,2)
 		if(self.arduinoAttached.isChecked()):
 			if(not self.arduinoCOM.text() == ""):
 				arduinoCOM = str(self.arduinoCOM.text())
+				self.arduino = SerialDevice(arduinoCOM,115200,5)
 		if(self.aprsAttached.isChecked()):
 			if(self.aprsCallsign.text() == ""):				# Get the APRS callsign too, default to placeholder
-				callsign = str(self.aprsCallsign.placeholderText())
+				self.callsign = str(self.aprsCallsign.placeholderText())
 			else:
-				callsign = self.aprsCallsign.text()
+				self.callsign = self.aprsCallsign.text()
 			if(not self.aprsCOM.text() == ""):
 				aprsCOM = str(self.aprsCOM.text())
+				self.APRS = SerialDevice(aprsCOM,9600,5)
 				
 		# Get the IMEI for the iridium modem, default to placeholder
 		if(self.iridiumIMEI.text() == ''):
-			IMEI = str(self.iridiumIMEI.placeholderText())
+			self.IMEI = str(self.iridiumIMEI.placeholderText())
 		else:
-			IMEI = str(self.iridiumIMEI.text())
-		
-		# Set the calibration goal based on the entry box
-		if(self.calibrationGoalVal.text() == ""):
-			calibrationGoal = str(self.calibrationGoalVal.placeholderText())
-		else:
-			calibrationGoal = int(ast.literal_eval(self.calibrationGoalVal.text()))
+			self.IMEI = str(self.iridiumIMEI.text())
 		
 		### If Get Local radio button is selected, use the arduino/IMU to get location and center bearing; otherwise get from the manual entry boxes ###
 		if(self.getLocal.isChecked()):
@@ -708,61 +705,94 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			groundLat = float(groundLat)
 			groundLon = float(groundLon)
 			groundAlt = float(groundAlt)
-			
-		### Determine which types of tracking are selected ###
+
 		useIridium = self.autoIridium.isChecked()
 		useAPRS = self.autoAPRS.isChecked()
 		useRFD = self.autoRFD.isChecked()
 		useDisabled = self.autoDisabled.isChecked()
+
 		if(useDisabled):
 			useIridium = False
 			useAPRS = False
 			useRFD = False
 
-		### Start up each type of tracking selected ###
-		iridiumInterrupt = False
 		aprsInterrupt = False
-		if(useIridium and not iridiumStarted):					# Don't start it up again if it's already going
-			iridiumWorker = Worker(self.getIridium)				# Create an instance of the Worker class, and pass in the function you need
-			iridiumWorker.moveToThread(self.iridiumThread)		# Move the new class to the thread you created
-			iridiumWorker.start.emit("hello")						# Start it up and say something to confirm
-			self.iridiumWorker = iridiumWorker
-			iridiumStarted = True
-		elif(not useIridium):
-			print("Iridium Interrupted")
-			iridiumInterrupt = True
-			iridiumStarted = False
 		if(useAPRS and not aprsStarted):					# Don't start it up again if it's already going
-			aprsWorker = Worker(self.getAPRS)				# Create an instance of the Worker class, and pass in the function you need
-			aprsWorker.moveToThread(self.aprsThread)		# Move the new class to the thread you created
-			aprsWorker.start.emit("hello")					# Start it up and say something to confirm
-			self.aprsWorker = aprsWorker
-			aprsStarted = True
+			if(aprsAttached):
+				aprsWorker = Worker(self.getAPRS)				# Create an instance of the Worker class, and pass in the function you need
+				aprsWorker.moveToThread(self.aprsThread)		# Move the new class to the thread you created
+				aprsWorker.start.emit("hello")					# Start it up and say something to confirm
+				aprsWorker.start.connect(aprsWorker.run)
+				self.aprsWorker = aprsWorker
+				aprsStarted = True
+			else:
+				self.createWarning('No APRS Attached')
+				self.autoAPRS.setChecked(False)
 		elif(not useAPRS):
 			print("APRS Interrupted")
 			aprsInterrupt = True
 			aprsStarted = False
 			
-		self.manualRefresh()
+		### Determine which types of tracking are selected ###
+		if(internetAccess):
+			### Start up each type of tracking selected ###
+			iridiumInterrupt = False
+			if(useIridium and not iridiumStarted):					# Don't start it up again if it's already going
+				iridiumWorker = Worker(self.getIridium)				# Create an instance of the Worker class, and pass in the function you need
+				iridiumWorker.moveToThread(self.iridiumThread)		# Move the new class to the thread you created
+				iridiumWorker.start.connect(iridiumWorker.run)
+				iridiumWorker.start.emit("hello")						# Start it up and say something to confirm
+				self.iridiumWorker = iridiumWorker
+				iridiumStarted = True
+			elif(not useIridium):
+				print("Iridium Interrupted")
+				iridiumInterrupt = True
+				iridiumStarted = False
+		else:
+			self.createWarning('Iridium Tracking will not work without Internet Access')
+			self.autoIridium.setChecked(False)
+
+		if(self.autoIridium.isChecked() or self.autoAPRS.isChecked() or self.autoRFD.isChecked()):
+			self.manualRefresh()
+		else:
+			self.autoDisabled.setChecked(True)			
+			self.manualRefresh()
+
+	def createWarning(self,text):
+		""" Creates a warning pop up window that can be dismissed by clicking the button """
+		self.warning = QWidget()
+		self.warningLabel = QLabel()
+		self.warningLabel.setText(text)
+		self.warningButton = QPushButton()
+		self.warningButton.setText('OK')
+		self.warningButton.clicked.connect(lambda: self.deleteWindow(self.warning))
+		self.warningLayout = QVBoxLayout()
+		self.warningLayout.addWidget(self.warningLabel)
+		self.warningLayout.addWidget(self.warningButton)
+		self.warning.setLayout(self.warningLayout)
+		self.warning.show()
+
+	def deleteWindow(self,window):
+		""" Eliminates the window """
+		window.deleteLater()
 		
 	def antennaOnline(self,update):
 		""" Reaim the antennae while in autotrack mode """
 		global autotrackOnline
-		global receivedTime, receivedLat, receivedLon, receivedAlt, bearingLog, elevationLog, losLog
 		if autotrackOnline:
 			self.status.setText("Online")
 			self.changeTextColor(self.status,"green")				# Update a nice and pretty status indicator in green
 			self.trackerLaunch.setText("Disable Antenna Tracker")
-			moveToTarget(update.getBear(), update.getEle())			# Move Antenna to correct position
+			self.moveToTarget(update.getBear(), update.getEle())			# Move Antenna to correct position
 		else:
 			#Graphing Arrays - wipe them
-			receivedTime = []
-			receivedLat = []
-			receivedLon = []
-			receivedAlt = []
-			losLog = []
-			elevationLog = []
-			bearingLog = []
+			self.receivedTime = []
+			self.receivedLat = []
+			self.receivedLon = []
+			self.receivedAlt = []
+			self.losLog = []
+			self.elevationLog = []
+			self.bearingLog = []
 			#Update a nice and pretty status indicator in red
 			self.status.setText("Offline")
 			self.changeTextColor(self.status,"red")
@@ -778,9 +808,11 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				distance = haversine(groundLat, groundLon, lat, lon)
 				bear = bearing(groundLat, groundLon, lat, lon)
 				ele = elevationAngle(alt, groundAlt, distance)
-				moveToTarget(bear,ele)
-				self.manualRefresh()
+
+				self.moveToTarget(bear,ele)			# Move the tracker
+				self.manualRefresh()				# Update the ground station table
 				print("Reaimed by Manual Coordinate Entry")
+
 			except:
 				print("Error with Manual Coordinate Entry, make sure Latitude, Longitude, and Altitude are entered")
 
@@ -803,9 +835,11 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				while ele > 360:
 					ele = ele - 360
 				print(ele)
-				moveToTarget(bear,ele)
+
+				self.moveToTarget(bear,ele)
 				self.manualRefresh()
 				print("Reaimed by Manual Angle Entry")
+
 			except:
 				print("Error with Manual Angle Entry, make sure Bearing and Elevation Angle are entered")
 	
@@ -833,7 +867,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		### When a slider position is changed, move the position of the servos ###
 		if arg == "slide":
 			if(inSliderMode):			# Only move if you're in slider mode
-				moveToTarget(self.panServoSlider.value(),self.tiltServoSlider.value())
+				self.moveToTarget(self.panServoSlider.value(),self.tiltServoSlider.value())
 				self.manualRefresh()			# Refresh the data tables
 					
 	def trimControl(self,arg):
@@ -843,72 +877,67 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		if(arg == 'up'):		# Adds one degrees of trim to the tilt servo
 			tiltOffset += 1
 			print("Tilt Trim: "+str(tiltOffset))
-			moveToTarget(antennaBear,antennaEle)
-			self.manualRefresh()
 		elif(arg == 'down'):	# Subtracts one degrees of trim from the tilt servo
 			tiltOffset -= 1
 			print("Tilt Trim: "+str(tiltOffset))
-			moveToTarget(antennaBear,antennaEle)
-			self.manualRefresh()
 		elif(arg == 'left'):	# Subtracts one degree of trim from the pan servo
 			panOffset -= 1
 			print("Pan Trim: "+str(panOffset))
-			moveToTarget(antennaBear,antennaEle)
-			self.manualRefresh()
 		elif(arg == 'right'):	# Adds one degree of trim to the pan servo
 			panOffset += 1
 			print("Pan Trim: "+str(panOffset))
-			moveToTarget(antennaBear,antennaEle)
-			self.manualRefresh()
 		elif(arg == 'reset'):	# Resets the trim values to zero
 			tiltOffset = 0
 			panOffset = 0
 			print("Tilt Trim: "+str(tiltOffset))
 			print("Pan Trim: "+str(panOffset))
-			moveToTarget(antennaBear,antennaEle)
-			self.manualRefresh()
+
+		self.moveToTarget(antennaBear,antennaEle)			# Move the tracker
+		self.manualRefresh()								# Update the ground station table
 		
-	def ToggleStillImageSystem(self):
+	def toggleStillImageSystem(self):
 		""" Toggles the state of the still image system """
-		global stillImageOnline, displayPhotoPath, stillImageRefreshTime
 		global saveData
 		
 		if rfdCommandsOnline:		# Don't let this happen if the RFD Commands are still going
 			print("RFD Commands are still Online")
 			self.stillImageTextBrowser.append("RFD Commands are still Online")
+			if(saveData):
+				self.logData("stillImage",'newText'+','+'RFD Commands are still Online')
 			return
 			
-		if stillImageOnline:		# If the still image system is online, turn it off and change the text
-			stillImageOnline = False
+		if self.stillImageOnline:		# If the still image system is online, turn it off and change the text
+			self.stillImageOnline = False
 			self.stillImageOnlineButton.setText("START")
 			self.stillImageOnlineLabel.setText("OFF")
 			self.changeTextColor(self.stillImageOnlineLabel,"red")
 			if saveData:		# Log the toggle
-				logData("stillImage",'toggle'+','+"Still Image System Turned Off")
+				self.logData("stillImage",'toggle'+','+"Still Image System Turned Off")
 			return
 		else:						# Otherwise, start the still image system
 			if not rfdAttached:
 				print("No RFD Radio on this computer")
 				self.stillImageTextBrowser.append("No RFD Radio on this Computer")
+				if(saveData):
+					self.logData('stillImage','newText'+','+'No RFD Radio on this Computer')
 				return
 			if saveData:		# Log the toggle
-				logData('stillImage','toggle'+','+"Still Image System Turned On")
-			stillImageOnline = True
+				self.logData('stillImage','toggle'+','+"Still Image System Turned On")
+			self.stillImageOnline = True
 			self.stillImageOnlineButton.setText("STOP")
 			self.stillImageOnlineLabel.setText("ON")
 			self.changeTextColor(self.stillImageOnlineLabel,"green")
 			return
 			
 	def updateStillImageValues(self):
-		""" Updates the sliders to match the global variables """
-		global picWidth, picHeight, picSharpness, picBrightness, picContrast, picSaturation, picISO
-		self.picWidthSlider.setValue(picWidth)
-		self.picHeightSlider.setValue(picHeight)
-		self.picSharpSlider.setValue(picSharpness)
-		self.picBrightSlider.setValue(picBrightness)
-		self.picContrastSlider.setValue(picContrast)
-		self.picSaturationSlider.setValue(picSaturation)
-		self.picISOSlider.setValue(picISO)
+		""" Updates the still image system slider positions to match the values """
+		self.picWidthSlider.setValue(self.picWidth)
+		self.picHeightSlider.setValue(self.picHeight)
+		self.picSharpSlider.setValue(self.picSharpness)
+		self.picBrightSlider.setValue(self.picBrightness)
+		self.picContrastSlider.setValue(self.picContrast)
+		self.picSaturationSlider.setValue(self.picSaturation)
+		self.picISOSlider.setValue(self.picISO)
 			
 	def updatePicSliderValues(self):
 		""" Updates the values displayed for the still image picture control sliders """
@@ -930,7 +959,8 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			self.rfdWorker = rfdWorker
 			
 		if arg == 'selectImage':
-			if(stillImageOnline):
+			if(self.stillImageOnline):
+
 				### Build the image selection window ###
 				self.picSelectionWindow = QWidget()
 				self.picSelectionWindow.setWindowTitle("Image Selection")
@@ -993,7 +1023,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		""" Updates the still image system text browser with the text passed in as the argument """
 		self.stillImageTextBrowser.append(text)
 		if saveData:									# If data logging is on, log the new text
-			logData('stillImage','newText'+','+text)
+			self.logData('stillImage','newText'+','+text)
 			
 	def updatePicture(self,displayPath):
 		""" Updates the still image system picture display to the picture associated with the path passed in as the argument """
@@ -1003,7 +1033,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		self.picLabel.setPixmap(scaledPm)			# Set the label to the map
 		self.picLabel.show()				# Show the image
 		if saveData:						# If data logging is on, log the new path
-			logData('stillImage','newPic'+','+displayPath)
+			self.logData('stillImage','newPic'+','+displayPath)
 			
 	def updatePictureProgress(self,progress,maxProgress):
 		""" Updates the still image system photo progress bar based on the value and max value passed in as arguments """
@@ -1012,18 +1042,15 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		
 	def getMostRecentImage(self):
 		""" Still Image System: Get the Most Recent Image through the RFD 900 """
-		global stillImageOnline
-		global rfdCOM, rfdBaud, rfdTimeout
-		global wordlength, extension
 		
 		# Check if the Still Image System is online
-		if not stillImageOnline:
+		if not self.stillImageOnline:
 			self.rfdThread.newStillText.emit("Still Image System not Online")
 			print("Still Image System not Online")
 			return
 			
 		if(rfdAttached):	# Only try to do stuff if there's an RFD attached
-			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)
+			rfdSer = self.RFD.getDevice()
 			
 			### Write 1 until you get the acknowledge back ###
 			rfdSer.write('1')
@@ -1050,18 +1077,18 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 					if(sendfilename[0] == "i"):
 						imagepath = sendfilename
 					else:
-						imagepath = "image_%s%s" % (str(datetime.today().strftime("%Y%m%d_T%H%M%S")),extension)
+						imagepath = "image_%s%s" % (str(datetime.today().strftime("%Y%m%d_T%H%M%S")),self.extension)
 				except:
-					imagepath = "image_%s%s" % (str(datetime.today().strftime("%Y%m%d_T%H%M%S")),extension)
+					imagepath = "image_%s%s" % (str(datetime.today().strftime("%Y%m%d_T%H%M%S")),self.extension)
 			else:
-				imagepath = imagepath+extension
+				imagepath = imagepath+self.extension
 			print "Image will be saved as:", imagepath
 			self.rfdThread.newStillText.emit("Image will be saved as: " + imagepath)
 			
 			### Receive the Image ###
 			timecheck = time.time()
 			sys.stdout.flush()
-			self.receive_image(str(imagepath), wordlength, rfdSer)			# Get the picture
+			self.receive_image(str(imagepath), self.wordlength, rfdSer)			# Get the picture
 			print "Receive Time =", (time.time() - timecheck)
 			self.rfdThread.newStillText.emit("Receive Time = " + str((time.time() - timecheck)))
 			
@@ -1081,18 +1108,15 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		Still Image System: Requests imagedata.txt, for the purpose 
 		of selecting a specific image to download 
 		"""
-		global stillImageOnline
-		global rfdCOM, rfdBaud, rfdTimeout
-		global wordlength, extension
 		
 		# Check if the Still Image System is online
-		if not stillImageOnline:
+		if not self.stillImageOnline:
 			print("Still Image System not Online")
 			self.rfdThread.newStillText.emit("Still Image System not Online")
 			return
 			
 		if(rfdAttached):	# Only try to do stuff if there's an RFD attached
-			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout) 	# Open the RFD Serial Port
+			rfdSer = self.RFD.getDevice()
 			
 			### Send the Pi 2 until the acknowledge is received ###
 			rfdSer.write('2')
@@ -1140,11 +1164,6 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 	def checkRequestedImage(self,pic):
 		""" Still Image System: Make sure the user doesn't accidentally get a high res image """
 		
-		self.picSelectionWindow.deleteLater()
-		global stillImageOnline
-		global rfdCOM, rfdBaud, rfdTimeout
-		global wordlength, extension
-		
 		data = pic.text()
 		if (data[10] != 'b'):										# High Res images are marked with a b
 			self.rfdThread.requestConfirmation.emit(str(data))			# Emit the signal to get a confirmation				
@@ -1168,12 +1187,8 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 
 	def getRequestedImage(self,data):
 		""" Still Image System: Retrieves the image specified in the argument, deletes the confirmation window if necessary """
-		global stillImageOnline
-		global rfdCOM, rfdBaud, rfdTimeout
-		global wordlength, extension
-		print(threading.current_thread().name)
 
-		rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)			# Open the RFD serial port
+		rfdSer = self.RFD.getDevice()
 
 		### Continuously write 3 until the acknowledge is received ###
 		rfdSer.write('3')
@@ -1192,7 +1207,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		print "Image will be saved as:", imagepath
 		self.rfdThread.newStillText.emit("Image will be saved as: " + str(imagepath))
 		sys.stdout.flush()
-		self.receive_image(str(imagepath), wordlength, rfdSer)			# Receive the image
+		self.receive_image(str(imagepath), self.wordlength, rfdSer)			# Receive the image
 		print "Receive Time =", (time.time() - timecheck)
 		self.rfdThread.newStillText.emit("Receive Time = " + str((time.time() - timecheck)))
 		self.rfdThread.newProgress.emit(0,1)			# Reset the progress bar
@@ -1226,28 +1241,20 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 
 		### Connect the buttons to the functions ###
 		self.confirmationYesButton.clicked.connect(lambda: self.getRequestedImageHelper(data))
-		self.confirmationNoButton.clicked.connect(self.noConfirmation)
-
-	def noConfirmation(self):
-		""" Delete the confirmation window if the No button is clicked """
-		self.confirmationCheckWindow.deleteLater()
-		return
+		self.confirmationNoButton.clicked.connect(lambda: self.deleteWindow(self.confirmationCheckWindow))
+		self.confirmationNoButton.clicked.connect(lambda: self.deleteWindow(self.picSelectionWindow))
 			
 	def picGetSettings(self):
 		""" Still Image System: Retrieve Current Camera Settings """
-		global stillImageOnline
-		global rfdCOM, rfdBaud, rfdTimeout
-		global wordlength, extension
-		global picWidth, picHeight, picSharpness, picBrightness, picContrast, picSaturation, picISO
 		
 		# Check if the Still Image System is online
-		if not stillImageOnline:
+		if not self.stillImageOnline:
 			print("Still Image System not Online")
 			self.rfdThread.newStillText.emit("Still Image System not Online")
 			return
 			
 		if(rfdAttached):	# Only try to do stuff if there's an RFD attached
-			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)		# Open the RFD Serial Port
+			rfdSer = self.RFD.getDevice()
 			
 			print "Retrieving Camera Settings"
 			self.rfdThread.newStillText.emit("Retrieving Camera Settings")
@@ -1290,33 +1297,33 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			try:
 				file = open("camerasettings.txt","r")
 				twidth = file.readline()			 #Default = (650,450); range up to
-				picWidth = int(twidth)
-				print("Width = " + str(picWidth))
-				self.rfdThread.newStillText.emit("Width = " + str(picWidth))
+				self.picWidth = int(twidth)
+				print("Width = " + str(self.picWidth))
+				self.rfdThread.newStillText.emit("Width = " + str(self.picWidth))
 				theight = file.readline()			 #Default = (650,450); range up to
-				picHeight = int(theight)
-				print("Height = " + str(picHeight))
-				self.rfdThread.newStillText.emit("Height = " + str(picHeight))
+				self.picHeight = int(theight)
+				print("Height = " + str(self.picHeight))
+				self.rfdThread.newStillText.emit("Height = " + str(self.picHeight))
 				tsharpness = file.readline()			  #Default  =0; range = (-100 to 100)
-				picSharpness = int(tsharpness)
-				print("Sharpness = " + str(picSharpness))
-				self.rfdThread.newStillText.emit("Sharpness = " + str(picSharpness))
+				self.picSharpness = int(tsharpness)
+				print("Sharpness = " + str(self.picSharpness))
+				self.rfdThread.newStillText.emit("Sharpness = " + str(self.picSharpness))
 				tbrightness = file.readline()			 #Default = 50; range = (0 to 100)
-				picBrightness = int(picBrightness)
-				print("Brightness = " + str(picBrightness))
-				self.rfdThread.newStillText.emit("Brightness = " + str(picBrightness))
+				self.picBrightness = int(tbrightness)
+				print("Brightness = " + str(self.picBrightness))
+				self.rfdThread.newStillText.emit("Brightness = " + str(self.picBrightness))
 				tcontrast = file.readline()			   #Default = 0; range = (-100 to 100)
-				picContrast = int(tcontrast)
-				print("Contrast = " + str(picContrast))
-				self.rfdThread.newStillText.emit("Contrast = " + str(picContrast))
+				self.picContrast = int(tcontrast)
+				print("Contrast = " + str(self.picContrast))
+				self.rfdThread.newStillText.emit("Contrast = " + str(self.picContrast))
 				tsaturation = file.readline()			 #Default = 0; range = (-100 to 100)
-				picSaturation = int(tsaturation)
-				print("Saturation = " + str(picSaturation))
-				self.rfdThread.newStillText.emit("Saturation = " + str(picSaturation))
+				self.picSaturation = int(tsaturation)
+				print("Saturation = " + str(self.picSaturation))
+				self.rfdThread.newStillText.emit("Saturation = " + str(self.picSaturation))
 				tiso = file.readline()					  #Unknown Default; range = (100 to 800)
-				picISO = int(tiso)
-				print("ISO = " + str(picISO))
-				self.rfdThread.newStillText.emit("ISO = " + str(picISO))
+				self.picISO = int(tiso)
+				print("ISO = " + str(self.picISO))
+				self.rfdThread.newStillText.emit("ISO = " + str(self.picISO))
 				file.close()
 				self.rfdThread.newPicSliderValues.emit()
 			except:
@@ -1333,38 +1340,34 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			
 	def picSendNewSettings(self):
 		""" Still Image System: Send New Camera Settings to the Pi """
-		global stillImageOnline
-		global rfdCOM, rfdBaud, rfdTimeout
-		global wordlength, extension
-		global picWidth, picHeight, picSharpness, picBrightness, picContrast, picSaturation, picISO	
 		
 		# Check if the Still Image System is online
-		if not stillImageOnline:
+		if not self.stillImageOnline:
 			print("Still Image System not Online")
 			self.rfdThread.newStillText.emit("Still Image System not Online")
 			return
 			
 		if(rfdAttached):	#Only try to do stuff if there's an RFD Attached
-			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)		#Open the RFD Serial Port
+			rfdSer = self.RFD.getDevice()
 			
 			### Update the global values based on current slider position ###
-			picWidth = int(self.picWidthSlider.value())
-			picHeight = int(self.picHeightSlider.value())
-			picSharpness = int(self.picSharpSlider.value())
-			picBrightness = int(self.picBrightSlider.value())
-			picContrast = int(self.picContrastSlider.value())
-			picSaturation = int(self.picSaturationSlider.value())
-			picISO = int(self.picISOSlider.value())
+			self.picWidth = int(self.picWidthSlider.value())
+			self.picHeight = int(self.picHeightSlider.value())
+			self.picSharpness = int(self.picSharpSlider.value())
+			self.picBrightness = int(self.picBrightSlider.value())
+			self.picContrast = int(self.picContrastSlider.value())
+			self.picSaturation = int(self.picSaturationSlider.value())
+			self.picISO = int(self.picISOSlider.value())
 			
 			### Open the camerasettings.txt file, and record the new values ###
 			file = open("camerasettings.txt","w")
-			file.write(str(picWidth)+"\n")
-			file.write(str(picHeight)+"\n")
-			file.write(str(picSharpness)+"\n")
-			file.write(str(picBrightness)+"\n")
-			file.write(str(picContrast)+"\n")
-			file.write(str(picSaturation)+"\n")
-			file.write(str(picISO)+"\n")
+			file.write(str(self.picWidth)+"\n")
+			file.write(str(self.picHeight)+"\n")
+			file.write(str(self.picSharpness)+"\n")
+			file.write(str(self.picBrightness)+"\n")
+			file.write(str(self.picContrast)+"\n")
+			file.write(str(self.picSaturation)+"\n")
+			file.write(str(self.picISO)+"\n")
 			file.close()
 			
 			### Continue sending 5 until the acknowledge is received from the Pi ###
@@ -1422,11 +1425,9 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			
 	def picDefaultSettings(self):
 		""" Still Image System: Sets the camera variables to the default values """
-		global stillImageOnline
-		global picWidth, picHeight, picSharpness, picBrightness, picContrast, picSaturation, picISO
 		
 		# Check if the Still Image System is online
-		if not stillImageOnline:
+		if not self.stillImageOnline:
 			print("Still Image System not Online")
 			self.stillImageTextBrowser.append("Still Image System not Online")
 			return
@@ -1467,26 +1468,26 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		self.picSaturationSlider.setValue(saturation)
 		self.picISOSlider.setValue(iso)
 		
-		### Change the globals ###
-		picWidth = width
-		picHeight = height
-		picSharpness = sharpness
-		picBrightness = brightness
-		picContrast = contrast
-		picSaturation = saturation
-		picISO = iso
+		### Update the Values ###
+		self.picWidth = width
+		self.picHeight = height
+		self.picSharpness = sharpness
+		self.picBrightness = brightness
+		self.picContrast = contrast
+		self.picSaturation = saturation
+		self.picISO = iso
 		
 		return
 		
 	def picVerticalFlip(self):
 		""" Still Image System: Flips the image vertically """
-		if not stillImageOnline:
+		if not self.stillImageOnline:
 			print("Still Image System not Online")
 			self.rfdThread.newStillText.emit("Still Image System not Online")
 			return
 		
 		if(rfdAttached):
-			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)		# Open the RFD Serial Port
+			rfdSer = self.RFD.getDevice()
 			
 			### Send the pi 0 until the acknowledge is received, or until too much time has passed ###
 			rfdSer.write('0')
@@ -1509,13 +1510,13 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			
 	def picHorizontalFlip(self):
 		""" Still Image System: Flips the image Horizontally """
-		if not stillImageOnline:
+		if not self.stillImageOnline:
 			print("Still Image System not Online")
 			self.rfdThread.newStillText.emit("Still Image System not Online")
 			return
 		
 		if(rfdAttached):
-			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)		# Open the RFD Serial Port
+			rfdSer = self.RFD.getDevice()
 			
 			### Send the pi 9 until the acknowledge is received, or until too much time has passed ###
 			rfdSer.write('9')
@@ -1539,17 +1540,15 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		
 	def time_sync(self):
 		""" Still Image System: Syncronizes the Pi and ground station so that the connection test can be run """
-		global stillImageOnline
-		global rfdCOM, rfdBaud, rfdTimeout
 		
 		# Check if the Still Image System is online
-		if not stillImageOnline:
+		if not self.stillImageOnline:
 			print("Still Image System not Online")
 			self.rfdThread.newStillText.emit('Still Image System not Online')
 			return
 		
 		if(rfdAttached):	# Only try to do stuff if there's a RFD Attached
-			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)		#Open the RFD Serial Port
+			rfdSer = self.RFD.getDevice()
 
 			### Send the Pi T until the acknowledge is received, or until the too much time has passed ###
 			rfdSer.write('8')
@@ -1587,8 +1586,6 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			
 	def receive_image(self, savepath, wordlength, rfdPort):
 		""" Receive an Image through the RFD 900 """
-		global rfdCOM, rfdBaud, rfdTimeout
-		global extension, displayPhotoPath
 								
 		rfdSer = rfdPort		# Rename the RFD serial port to the normal thing
 		
@@ -1656,16 +1653,16 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		### Save the image as the given filename in the Images folder
 		try:
 			b64_to_image(finalstring,"Images/"+str(savepath))			# Decode the image
-			displayPhotoPath = "Images/"+str(savepath)
-			self.rfdThread.newPicture.emit(displayPhotoPath)		# Send the signal with the new image location to the main GUI
+			self.displayPhotoPath = "Images/"+str(savepath)
+			self.rfdThread.newPicture.emit(self.displayPhotoPath)		# Send the signal with the new image location to the main GUI
 		except:
-			print "Error with filename, saved as newimage" + extension
-			self.rfdThread.newStillText.emit("Error with filename, saved as newimage" + extension)
+			print "Error with filename, saved as newimage" + self.extension
+			self.rfdThread.newStillText.emit("Error with filename, saved as newimage" + self.extension)
 			sys.stdout.flush()
-			b64_to_image(finalstring,"Images/"+"newimage" + extension)			#Save image as newimage.jpg due to a naming error in the Images folder
+			b64_to_image(finalstring,"Images/"+"newimage" + self.extension)			#Save image as newimage.jpg due to a naming error in the Images folder
 		
 		### Clean Up ###
-		wordlength = 7000			# Reset the wordlength to the original
+		self.wordlength = 7000			# Reset the wordlength to the original
 		print "Image Saved"
 		self.rfdThread.newStillText.emit("Image Saved")
 		sys.stdout.flush()
@@ -1753,8 +1750,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		return
 		
 	def resizePicture(self,event):
-		global displayPhotoPath
-		pm = QPixmap(displayPhotoPath)		# Create a pixmap from the default image
+		pm = QPixmap(self.displayPhotoPath)		# Create a pixmap from the default image
 		scaledPm = pm.scaled(self.picLabel.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation)		# Scale the pixmap
 		self.picLabel.setPixmap(scaledPm)			# Set the label to the map
 		self.picLabel.show()				# Show the image
@@ -1766,15 +1762,11 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 
 		if not rfdCommandsOnline:			# Don't let the listen be messed with while the commands are still running
 			if not rfdListenOnline:			# If listening isn't on, turn it on
-				if saveData:				# Log the toggle
-					logData("RFD","toggle"+','+"RFD Listen Online")
 				rfdListenOnline = True
 				self.rfdListenCheck()		# Function to actually make things happen
 				
 			else:
 				listenInterrupt = True 		# Interrupt the listen loop to get out of it
-				if saveData:
-					logData("RFD",'toggle'+','+"RFD Listen Offline")
 				rfdListenOnline = False 
 				self.rfdListenCheck()		# Function to actually make things happen
 
@@ -1786,9 +1778,12 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		global rfdListenOnline, listenInterrupt
 
 		if(rfdListenOnline):
-			if stillImageOnline:		# Don't let this work if the still image system is using the RFD 900
+			if self.stillImageOnline:		# Don't let this work if the still image system is using the RFD 900
 				print("Still Image System cannot be Online")
 				self.rfdReceiveBrowser.append("Still Image System cannot be Online")
+				rfdListenOnline = False
+				if(saveData):
+					self.logData("RFD","newText"+','+"Still Image System cannot be Online")
 				return
 
 			if rfdAttached:				# Only try to do things if the RFD is attached
@@ -1796,6 +1791,8 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				self.rfdListenOnlineLabel.setText("ON")
 				self.changeTextColor(self.rfdListenOnlineLabel,"green")
 				listenInterrupt = False 	# Make sure the interrupt is off and ready to use
+				if saveData:				# Log the toggle
+					self.logData("RFD","toggle"+','+"RFD Listen Online")
 
 				# Starts the rfdListen function in the side thread so that it doesn't interrupt the main loop
 				rfdWorker = Worker(self.rfdListen)		# Create an instance of the Worker class, and pass in the function you need
@@ -1803,25 +1800,31 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				rfdWorker.start.connect(rfdWorker.run)
 				rfdWorker.start.emit("hello")		# Start it up and say something to confirm
 				self.rfdWorker = rfdWorker
+			else:
+				rfdListenOnline = False
+				self.rfdReceiveBrowser.append("No RFD Radio attached")
+				if(saveData):
+					self.logData("RFD","newText"+','+"No RFD Radio attached")
 				
 		else:
-			print("Checked")
 			# Turn off the RFD listen, and change the button and label text and color
 			listenInterrupt = True
 			self.rfdListenButton.setText("Listen")
 			self.rfdListenOnlineLabel.setText("OFF")
 			self.changeTextColor(self.rfdListenOnlineLabel,"red")
+			if saveData:
+				self.logData("RFD",'toggle'+','+"RFD Listen Offline")
 			return
 
 	def rfdListen(self):
 		""" Listens to the RFD serial port until interrupted """
-		global rfdCOM, rfdBaud, rfdTimeout, rfdCommandsOnline, commandInterrupt
+		global rfdCommandsOnline, commandInterrupt
 		global listenInterrupt, rfdListenOnline
 		global saveData, useRFD
 		
 		if(rfdListenOnline):		# Confirm that the listen is online
 			if(rfdAttached):		# Make sure there's still an RFD
-				rfdSer = serial.Serial(port = str(rfdCOM), baudrate = rfdBaud, timeout = rfdTimeout)		# Open the RFD Serial Port
+				rfdSer = self.RFD.getDevice()
 				
 				### Loop until interrupted; handle anything received by the RFD ###
 				while(not listenInterrupt):
@@ -1849,14 +1852,16 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		
 			### If the commands aren't online, turn them online, and change the text/color of the label and button ###
 			if not rfdCommandsOnline:
-				if stillImageOnline:		# Don't let this work if the still image system is using the RFD 900
+				if self.stillImageOnline:		# Don't let this work if the still image system is using the RFD 900
 					print("Still Image System cannot be Online")
 					self.rfdReceiveBrowser.append("Still Image System cannot be Online")
+					if(saveData):
+						self.logData('RFD','newText'+','+"Still Image System cannot be Online")
 					return
 				if rfdAttached:		# Only try to do things if the RFD is attached	
 					rfdCommandsOnline = True
 					if saveData:		# Log the toggle
-						logData("RFD",'toggle'+','+'RFD Commands Online')
+						self.logData("RFD",'toggle'+','+'RFD Commands Online')
 					self.rfdCommandButton.setText("STOP")		# Change the button and label to opposite state
 					self.rfdCommandsOnlineLabel.setText("ON")
 					self.changeTextColor(self.rfdCommandsOnlineLabel,"green")
@@ -1871,20 +1876,22 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				else:		# If no RFD, let the user know and return
 					print("No RFD Radio attached to this Computer")
 					self.rfdReceiveBrowser.append("No RFD Radio attached to this Computer")
+					if(saveData):
+						self.logData('RFD','newText'+','+'No RFD Radio attached to this Computer')
 					return
 			else:
 				### Turn off the RFD Commands, and change the button and label text and color ###
 				commandInterrupt = True
 				rfdCommandsOnline = False
 				if saveData:		# Log the toggle
-					logData("RFD",'toggle'+','+"RFD Commands Offline")
+					self.logData("RFD",'toggle'+','+"RFD Commands Offline")
 				self.rfdCommandButton.setText("START")
 				self.rfdCommandsOnlineLabel.setText("OFF")
 				self.changeTextColor(self.rfdCommandsOnlineLabel,"red")
 		
 	def rfdCommandsControl(self):
 		""" Handles the RFD Commands """
-		global rfdCOM, rfdBaud, rfdTimeout, rfdCommandsOnline, commandInterrupt
+		global rfdCommandsOnline, commandInterrupt
 
 		if rfdCommandsOnline:		# Make sure the commands are online
 			if(rfdAttached):		# Only try to do stuff if there's an RFD Attached
@@ -1902,7 +1909,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 					return
 				toSend = identifier + "?" + command	+ "!"	# Connect the identifier and the command with a ? separating for parsing, and an ! at the end
 				
-				rfdSer = serial.Serial(port = str(rfdCOM), baudrate = rfdBaud, timeout = rfdTimeout)		# Open the RFD Serial Port
+				rfdSer = self.RFD.getDevice()
 				
 				### Until the acknowledge is received, or the stop button is pressed, keep sending the message ###
 				print(datetime.today().strftime('%H:%M:%S'))
@@ -1954,14 +1961,24 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 	def getPiRuntimeDataButtonPress(self):
 		""" Check to see if the system is in a state where it can receive the pi Runtime Data """
 		
-		if(stillImageOnline):
+		if(self.stillImageOnline):
 			print("Still Image System cannot be Online")
 			self.rfdReceiveBrowser.append("Still Image System cannot be Online")
+			if(saveData):
+				self.logData('RFD','newText'+','+'Still Image System cannot be Online')
 			return
 		if(rfdCommandsOnline or rfdListenOnline):
 			print("RFD Commands cannot be Online")
 			self.rfdReceiveBrowser.append("RFD Commands cannot be Online")
+			if(saveData):
+				self.logData('RFD','newText'+'RFD Commands cannot be Online')
 			return
+
+		if(not rfdAttached):
+			print("No RFD Attached")
+			self.rfdReceiveBrowser.append("No RFD Attached")
+			if(saveData):
+				self.logData('RFD','newText'+','+'No RFD Attached')
 			
 		rfdWorker = Worker(self.getPiRuntimeData)
 		rfdWorker.moveToThread(self.rfdThread)
@@ -1973,7 +1990,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		""" Retrieve the runtime data from the Pi """
 		
 		if(rfdAttached):
-			rfdSer = serial.Serial(port = rfdCOM, baudrate = rfdBaud, timeout = rfdTimeout)		# Open the RFD Serial Port
+			rfdSer = self.RFD.getDevice()
 			
 			### Send the pi 7 until the acknowledge is received, or until too much time has passed ###
 			rfdSer.write('7')
@@ -2040,7 +2057,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		
 		self.rfdReceiveBrowser.append(text)
 		if saveData:		# Log data if data logging is on
-			logData("RFD","newText"+','+text)
+			self.logData("RFD","newText"+','+text)
 						
 	def updatePayloads(self,received):
 		""" 
@@ -2174,7 +2191,6 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		
 	def searchComPorts(self):
 		""" Sets the Connections based on the Com Ports in use """
-		global rfdCOM, servoCOM, arduinoCOM, aprsCOM
 		
 		ardCheck = False
 		serCheck = False
@@ -2208,7 +2224,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 					self.servoAttached.setChecked(True)
 					serCheck = True
 				
-			if eachLst[1].find("USB Serial Port") != -1 and each.vid == 1027 and each.pid == 24577:			# RFD 900 shows up as USB Serial Port, with vid 1027 and pid 24577
+			if each.vid == 1027 and each.pid == 24577:			# RFD 900 has vid 1027 and pid 24577
 				rfdCOM = each[0].strip()
 				self.rfdCOM.setText(rfdCOM)
 				self.rfdAttached.setChecked(True)
@@ -2255,11 +2271,16 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 
 	def calibrateIMU(self):
 		""" Display the calibration values for the IMU in a visible window, and allow the user to select when the calibration is ready """
-		global groundAlt,groundLat,groundLon,centerBear,antennaBear,calibrationGoal,centerBearSet, calibrationReady
+		global groundAlt,groundLat,groundLon,centerBear,antennaBear,centerBearSet, calibrationReady
 		
 		if arduinoAttached:
+			if(not getLocal):
+				self.createWarning('Need to select Get Local for Center Bearing')
+				print("Need to select Get Local for Center Bearing")
+				return
+
 			try:
-				s2 =serial.Serial(str(arduinoCOM), baudrate = arduinoBaud, timeout = arduinoTimeout)		# Open the arduino serial port
+				s2 = self.arduino.getDevice()
 			except:
 				print("Error opening the Arduino serial port")
 				return
@@ -2298,11 +2319,12 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 					self.calBrowser.append(displayStr)
 				QCoreApplication.processEvents()
 		else:
+			self.createWarning('No Arduino Attached')
 			print("No Arduino Attached")
 
 	def getCenterBearing(self,s2):
 		""" Acquire a center bearing and a GPS location from the calibration arduino """
-		global groundAlt,groundLat,groundLon,centerBear,antennaBear,calibrationGoal,centerBearSet, calibrationReady
+		global groundAlt,groundLat,groundLon,centerBear,antennaBear,centerBearSet, calibrationReady
 
 		self.calibrationWindow.deleteLater()
 		self.calBrowser.deleteLater()
@@ -2348,8 +2370,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 	
 	def getIridium(self):
 		""" Gets tracking information from the Iridium satellite modem by taking the information from the SQL database at Montana State University """
-		global receivedTime, receivedLat, receivedLon, receivedAlt, bearingLog, elevationLog, losLog
-		global db_host, db_user, db_passwd, db_name, IMEI
+		global db_host, db_user, db_passwd, db_name
 		global iridiumInterrupt
 
 		prev = ''
@@ -2360,7 +2381,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 				try:
 					db_local = MySQLdb.connect(host=db_host,user=db_user,passwd=db_passwd,db=db_name)		# Connect to the database
 					cursor = db_local.cursor()																# prepare a cursor object using cursor() method
-					sql = "select gps_fltDate,gps_time,gps_lat,gps_long,gps_alt from gps where gps_IMEI = "+IMEI+" order by pri_key DESC"   
+					sql = "select gps_fltDate,gps_time,gps_lat,gps_long,gps_alt from gps where gps_IMEI = "+self.IMEI+" order by pri_key DESC"   
 					cursor.execute(sql)
 					connected = True
 					if(iridiumInterrupt):
@@ -2388,27 +2409,15 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 					### Create a new location object ###
 					try:
 						newLocation = BalloonUpdate(remoteTime,remoteSeconds,remoteLat,remoteLon,remoteAlt,"Iridium")
+						if saveData:		# Log the balloon location
+							self.logData("balloonLocation",newLocation.getTrackingMethod()+','+str(newLocation.getTime())+','+str(newLocation.getLat())+','+str(newLocation.getLon())+','+str(newLocation.getAlt())+','+str(newLocation.getBear())+','+str(newLocation.getEle())+','+str(newLocation.getLOS()))
+
 					except:
 						print("Error creating a new balloon location object from Iridium Data")
 
 					### Update the graphing arrays with the new data ###
 					try:
-						if ((len(receivedTime) == 0)):
-							receivedTime = np.append(receivedTime,remoteSeconds)
-							receivedLon = np.append(receivedLon,newLocation.getLon())
-							receivedLat = np.append(receivedLat,newLocation.getLat())
-							receivedAlt = np.append(receivedAlt,newLocation.getAlt())
-							bearingLog = np.append(bearingLog,newLocation.getBear())
-							elevationLog = np.append(elevationLog,newLocation.getEle())
-							losLog = np.append(losLog,newLocation.getLOS())
-						elif(receivedTime[len(receivedTime) - 1] < remoteSeconds):
-							receivedTime = np.append(receivedTime,remoteSeconds)
-							receivedLon = np.append(receivedLon,newLocation.getLon())
-							receivedLat = np.append(receivedLat,newLocation.getLat())
-							receivedAlt = np.append(receivedAlt,newLocation.getAlt())
-							bearingLog = np.append(bearingLog,newLocation.getBear())
-							elevationLog = np.append(elevationLog,newLocation.getEle())
-							losLog = np.append(losLog,newLocation.getLOS())
+						self.updateGraphingArrays(remoteSeconds,newLocation)
 					except:
 						print("Error updating graphing arrays with Iridium Data")
 						
@@ -2417,7 +2426,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 					except:
 						print("Error signaling the main thread for new Iridium Location")
 			except:
-				print("ERROR PARSING DATA FROM DATABASE: Cannot parse data or data may not exist, please double check your IMEI number at the top of the code")
+				print("ERROR PARSING DATA FROM DATABASE: Cannot parse data or data may not exist, please double check your IMEI number")
 		### Clean up ###
 		try:
 			cursor.close()
@@ -2430,7 +2439,6 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 	def getRFD(self,data):
 		""" Interprets a  GPS string received from the RFD into a balloon location update """
 		global rfdTime, rfdLat, rfdLon, rfdAlt, rfdBear, rfdEle, rfdLOS, groundLat, groundLon
-		global receivedTime, receivedLat, receivedLon, receivedAlt, bearingLog, elevationLog, losLog
 		
 		### Interpret the balloon location list ###
 		try:
@@ -2440,7 +2448,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			lat = stringToFloat(data[3])		# Latitude in Degrees
 			lon = stringToFloat(data[4])		# Longitude in Degrees
 			alt = stringToFloat(data[5])		# Altitude in meters (sealevel)
-			#sat = stringToFloat(data[6][:-1])		# Number of Satellites
+			sat = stringToFloat(data[6][:-1])		# Number of Satellites
 		except:
 			print("Error interpretting RFD Data")
 
@@ -2452,27 +2460,14 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		### Create a new location object ###
 		try:
 			newLocation = BalloonUpdate(gpsTime,rfdSeconds,lat,lon,alt,"RFD")
+			if saveData:		# Log the balloon location
+				self.logData("balloonLocation",newLocation.getTrackingMethod()+','+str(newLocation.getTime())+','+str(newLocation.getLat())+','+str(newLocation.getLon())+','+str(newLocation.getAlt())+','+str(newLocation.getBear())+','+str(newLocation.getEle())+','+str(newLocation.getLOS()))
 		except:
 			print("Error creating a new balloon location object from RFD Data")
 
 		### Update the graphing arrays with the new data ###
 		try:
-			if ((len(receivedTime) == 0)):
-				receivedTime = np.append(receivedTime,rfdSeconds)
-				receivedLon = np.append(receivedLon,newLocation.getLon())
-				receivedLat = np.append(receivedLat,newLocation.getLat())
-				receivedAlt = np.append(receivedAlt,newLocation.getAlt())
-				bearingLog = np.append(bearingLog,newLocation.getBear())
-				elevationLog = np.append(elevationLog,newLocation.getEle())
-				losLog = np.append(losLog,newLocation.getLOS())
-			elif(receivedTime[len(receivedTime) - 1] < rfdSeconds):
-				receivedTime = np.append(receivedTime,rfdSeconds)
-				receivedLon = np.append(receivedLon,newLocation.getLon())
-				receivedLat = np.append(receivedLat,newLocation.getLat())
-				receivedAlt = np.append(receivedAlt,newLocation.getAlt())
-				bearingLog = np.append(bearingLog,newLocation.getBear())
-				elevationLog = np.append(elevationLog,newLocation.getEle())
-				losLog = np.append(losLog,newLocation.getLOS())
+			self.updateGraphingArrays(rfdSeconds,newLocation)
 		except:
 			print("Error updating graphing arrays with Iridium Data")
 			
@@ -2483,10 +2478,9 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		
 	def getAPRS(self):
 		""" Gets tracking information from the APRS receiver """
-		global aprsCOM, aprsBaud, aprsTimeout,callsign, aprsInterrupt
-		global receivedTime, receivedLat, receivedLon, receivedAlt, bearingLog, elevationLog, losLog
+		global aprsCOM, aprsBaud, aprsTimeout, aprsInterrupt
 
-		aprsSer = serial.Serial(port = aprsCOM, baudrate = aprsBaud, timeout = aprsTimeout)		# Open the APRS Serial Port
+		aprsSer = self.APRS.getDevice()
 
 		while(not aprsInterrupt):
 			### Read the APRS serial port, and parse the string appropriately 								###
@@ -2494,7 +2488,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 			try:
 				line = str(aprsSer.readline())
 				print(line)
-				idx = line.find(callsign)
+				idx = line.find(self.callsign)
 				if(idx != -1):
 					line = line[idx:]
 					line = line[line.find("!")+1:line.find("RadBug")]
@@ -2516,27 +2510,14 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 					### Create a new location object ###
 					try:
 						newLocation = BalloonUpdate(time,aprsSeconds,lat,lon,alt,"APRS")
+						if saveData:		# Log the balloon location
+							self.logData("balloonLocation",newLocation.getTrackingMethod()+','+str(newLocation.getTime())+','+str(newLocation.getLat())+','+str(newLocation.getLon())+','+str(newLocation.getAlt())+','+str(newLocation.getBear())+','+str(newLocation.getEle())+','+str(newLocation.getLOS()))
 					except:
 						print("Error creating a new balloon location object from APRS Data")
 
 					### Update the graphing arrays with the new data ###
 					try:
-						if ((len(receivedTime) == 0)):
-							receivedTime = np.append(receivedTime,aprsSeconds)
-							receivedLon = np.append(receivedLon,newLocation.getLon())
-							receivedLat = np.append(receivedLat,newLocation.getLat())
-							receivedAlt = np.append(receivedAlt,newLocation.getAlt())
-							bearingLog = np.append(bearingLog,newLocation.getBear())
-							elevationLog = np.append(elevationLog,newLocation.getEle())
-							losLog = np.append(losLog,newLocation.getLOS())
-						elif(receivedTime[len(receivedTime) - 1] < aprsSeconds):
-							receivedTime = np.append(receivedTime,aprsSeconds)
-							receivedLon = np.append(receivedLon,newLocation.getLon())
-							receivedLat = np.append(receivedLat,newLocation.getLat())
-							receivedAlt = np.append(receivedAlt,newLocation.getAlt())
-							bearingLog = np.append(bearingLog,newLocation.getBear())
-							elevationLog = np.append(elevationLog,newLocation.getEle())
-							losLog = np.append(losLog,newLocation.getLOS())
+						self.updateGraphingArrays(aprsSeconds,newLocation)
 					except:
 						print("Error updating graphing arrays with APRS Data")
 						
@@ -2555,7 +2536,214 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 		aprsStarted = False
 		aprsInterrupt = False
 
+	def updateGraphingArrays(self,seconds,location):
+		if ((len(self.receivedTime) == 0)):
+			self.receivedTime = np.append(self.receivedTime,seconds)
+			self.receivedLon = np.append(self.receivedLon,location.getLon())
+			self.receivedLat = np.append(self.receivedLat,location.getLat())
+			self.receivedAlt = np.append(self.receivedAlt,location.getAlt())
+			self.bearingLog = np.append(self.bearingLog,location.getBear())
+			self.elevationLog = np.append(self.elevationLog,location.getEle())
+			self.losLog = np.append(self.losLog,location.getLOS())
+		elif(self.receivedTime[len(self.receivedTime) - 1] < seconds):
+			self.receivedTime = np.append(self.receivedTime,seconds)
+			self.receivedLon = np.append(self.receivedLon,location.getLon())
+			self.receivedLat = np.append(self.receivedLat,location.getLat())
+			self.receivedAlt = np.append(self.receivedAlt,location.getAlt())
+			self.bearingLog = np.append(self.bearingLog,location.getBear())
+			self.elevationLog = np.append(self.elevationLog,location.getEle())
+			self.losLog = np.append(self.losLog,location.getLOS())
+
+	def logData(self,type,msg):
+		""" Logs the message in the correct file designated in the type argument """
+		# try:
+		if type == "RFD":
+			f = open(self.rfdLog,'a')
+		elif type == "stillImage":
+			f = open(self.stillImageLog,'a')
+		elif type == "balloonLocation":
+			f = open(self.balloonLocationLog,'a')
+		elif type == "pointing":
+			f = open(self.pointingLog,'a')
+		f.write(str(datetime.today().strftime("%m/%d/%Y %H:%M:%S"))+','+msg+'\n')
+		f.close()
+		# except:
+			# print("Error logging data: "+type+','+msg)
+
+	def setServoAccel(self):
+		""" Sets the rate at which the servos accelerate """
+
+		try:
+			s = self.servos.getDevice()
+
+			setAccel = [accelCommand,tiltChannel,tiltAccel,0]
+			s.write(setAccel)
+			setAccel = [accelCommand,panChannel,panAccel,0]
+			s.write(setAccel)
+
+			s.close()				# Close the servo serial port
+
+		except:
+			print("Error, could not set the servo acceleration, check com ports")
+		
+	def setServoSpeed(self):
+		""" Sets the max speed at which the servos rotate """
+
+		try:
+			s = self.servos.getDevice()
+
+			setSpeed = [speedCommand,tiltChannel,tiltSpeed,0]
+			s.write(setSpeed)
+			setSpeed = [speedCommand,panChannel,panSpeed,0]
+			s.write(setSpeed)
+
+			s.close()					# Close the servo serial port
+
+		except:
+			print("Error, could not set the servo speed, check com ports")
+
+	def moveTiltServo(self,position):
+		""" Takes a single argument, moves the tilt servo to the position specified by the argument """
+		global antennaEle
+		
+		if servoAttached:
+			try:
+				s = self.servos.getDevice()
+				
+				### Move the tilt servo ###
+				if(position < 71):		  #80 degrees upper limit
+						moveTilt = [moveCommand,tiltChannel,chr(71)]
+				elif(position > 123):	   #5 degrees lower limit
+						moveTilt = [moveCommand,tiltChannel,chr(123)]
+				else:
+						moveTilt = [moveCommand,tiltChannel,chr(position)]
+				s.write(moveTilt)
+				print "\t\tMove Tilt: ", float(position)
+				
+				mGui.updateGround(0,5,((position - 127)*90/127.00))		 # Update the position the GUI says it's pointing to
+				mGui.manualRefresh()		# Refresh the GUI to show the new values
+
+				s.close()			# Close the servo serial port
+
+			except:
+				print("Error updating tilt servo position")
+			
+		else:
+			print "Error: Settings indicate no servo connection"
+
+	def movePanServo(self,position):
+		""" Takes a single argument, moves the pan servo to the position specified by the argument """
+		global antennaBear,previousPan
+
+		if servoAttached:
+			try:
+				s = self.servos.getDevice()
+				
+				### Move the pan servo ###
+				if previousPan > position:
+					position += 1
+				previousPan = position
+				movePan = [moveCommand,panChannel,chr(255-position)]
+				s.write(movePan)
+				
+				print "\t\tMove Pan: ", float(position)
+				mGui.updateGround(0,4,centerBear +((position - 127)*90/127.00))			# Update the position the GUI says it's pointing to
+				mGui.manualRefresh()			# Refesh the GUI to show the new values
+
+				s.close()				# Close the servo serial port
+
+			except:
+				print("Error updating pan servo position")
+
+		else:
+			print "Error: Settings indicate no servo connection"
+
+	def pointToMostRecentBalloon(self):
+		""" Aims the tracker at the balloon, even if the antenna tracker is offline """
+		
+		print "Starting serial communication with",servoCOM
+		if servoAttached:
+			self.moveToTarget(currentBalloon.getBear(),currentBalloon.getEle())
+			print "Move to Center Command Sent via", servoCOM
+		else:
+			print "Error: Settings set to no Servo Connection"
+
+	def moveToCenterPos(self):
+		""" Send servos to their center pos (should be horizontal and straight ahead if zeroed) """
+		
+		print "Starting serial communication with",servoCOM
+		if servoAttached:
+			self.moveTiltServo(127)
+			self.movePanServo(127)
+			print "Move to Center Command Sent via", servoCOM
+		else:
+			print "Error: Settings set to no Servo Connection"
+
+	def panBothServos(self):
+		""" Moves servos through range of motion tests """
+		
+		print "Starting serial communication with",servoCOM
+		if servoAttached:
+			for i in range(127,0,-1):
+				self.moveTiltServo(i)
+				self.movePanServo(i)
+				time.sleep(0.05)
+				i+=1
+			time.sleep(1)
+
+			for i in range(0,254,1):
+				self.moveTiltServo(i)
+				self.movePanServo(i)
+				time.sleep(0.05)
+				i+=1
+			time.sleep(1)
+			print "Motion Test Finished"
+		else:
+			print "Error: Settings set to no Servo Connection"
+
+	def moveToTarget(self,bearing,elevation):
+		""" Moves servos based on a bearing and elevation angle """
+		global centerBear,antennaBear,antennaEle
+		global tiltOffset, panOffset
+		global saveData
+		
+		temp = 0
+		# Uses the center bearing, and makes sure you don't do unnessessary spinning when you're close to 0/360
+		if((bearing>180) and (centerBear == 0)):
+				centerBear = 360
+		elif (((centerBear - bearing) > 180) and (centerBear >= 270)):
+				bearing = bearing + 360
+		elif (((centerBear - bearing) > 180) and (centerBear <=180)):
+				temp = centerBear
+				centerBear = 360 + temp
+		print ("\tBearing: %.0f" %(bearing+panOffset))
+		print ("\tElevation Angle: %.0f"%(elevation+tiltOffset))
+		# With new digital servos, can use map method as described here: http://arduino.cc/en/reference/map
+		panTo = ((bearing - (centerBear - 168)) * (servo_max - servo_min) / ((centerBear + 168) - (centerBear - 168)) + servo_min) + (255*panOffset/360)		# Get the correct numerical value for the servo position by adjusting based on offset, max and min
+		if panTo > 254: panTo = 254
+		if panTo < 0: panTo = 0
+		print "\tServo Degrees:"
+		if servoAttached:
+			self.movePanServo(math.trunc(panTo)) 
+		#If Error in Antenna Mount i.e. put antenna on backwards fix with changing 0-elevation to elevation (must change tilt stops too
+		tiltTo = (((0-elevation) - tilt_angle_min) * (servo_max - servo_min) / (tilt_angle_max - tilt_angle_min) + servo_min) + (255*(-tiltOffset)/360)		# Get the correct numerical value for the servo position by adjusting based on offset, max and min
+		print(tiltTo)
+		if tiltTo > 254: tiltTo = 254		# Don't go over the max
+		if tiltTo < 0: tiltTo = 0			# Don't go under the min
+		if servoAttached:		# Move the servos to the new locations if they're attacheed
+			self.moveTiltServo(math.trunc(tiltTo))
+		if (temp!= 0):
+				centerBear = temp
+			
+		# Write the new pointing location to the log file
+		self.logData("pointing",str(bearing)+','+str(elevation))
+		# Update the globals
+		antennaBear = bearing
+		antennaEle = elevation
+
 def getMapHtml(lat,lon):
+	""" Generates an HTML and JavaScript code segment using Google Maps API to plot the lat and lon on a map """
+	
 	maphtml = """
 	<!DOCTYPE html>
 	<html>
@@ -2587,30 +2775,20 @@ def getMapHtml(lat,lon):
 			}
 		  };
 
-		  function initMap() {
-			// Create the map.
-			var map = new google.maps.Map(document.getElementById('map'), {
-			  zoom: 7,
-			  center: {lat: """+str(lat) + """, lng: """+str(lon)+"""},
-			  mapTypeId: 'terrain'
-			});
+			function initMap() {
+			  var myLatLng = {lat: """+str(lat)+""", lng: """+str(lon)+"""};
 
-			// Construct the circle for each value in balloon.
-			// Note: We scale the area of the circle based on the rad.
-			for (var each in balloon) {
-			  // Add the circle for this city to the map.
-			  var cityCircle = new google.maps.Circle({
-				strokeColor: '#FF0000',
-				strokeOpacity: 0.8,
-				strokeWeight: 2,
-				fillColor: '#FF0000',
-				fillOpacity: 0.35,
-				map: map,
-				center: balloon[each].center,
-				radius: Math.sqrt(balloon[each].rad) * 100
+			  var map = new google.maps.Map(document.getElementById('map'), {
+			    zoom: 8,
+			    center: myLatLng
+			  });
+
+			  var marker = new google.maps.Marker({
+			    position: myLatLng,
+			    map: map,
+			    title: 'Hello World!'
 			  });
 			}
-		  }
 		  
 		</script>
 		<script async defer
@@ -2629,179 +2807,7 @@ def stringToFloat(s):
 		return float(0)
 	else:
 		return float(s)
-
-def pointToMostRecentBalloon():
-	""" Aims the tracker at the balloon, even if the antenna tracker is offline """
 	
-	print "Starting serial communication with",servoCOM
-	if servoAttached:
-		moveToTarget(currentBalloon.getBear(),currentBalloon.getEle())
-		print "Move to Center Command Sent via", servoCOM
-	else:
-		print "Error: Settings set to no Servo Connection"
-def moveToCenterPos():
-	""" Send servos to their center pos (should be horizontal and straight ahead if zeroed) """
-	
-	print "Starting serial communication with",servoCOM
-	if servoAttached:
-		moveTiltServo(127)
-		movePanServo(127)
-		print "Move to Center Command Sent via", servoCOM
-	else:
-		print "Error: Settings set to no Servo Connection"
-
-def panBothServos():
-	""" Moves servos through range of motion tests """
-	
-	print "Starting serial communication with",servoCOM
-	if servoAttached:
-		for i in range(127,0,-1):
-			moveTiltServo(i)
-			movePanServo(i)
-			time.sleep(0.05)
-			i+=1
-		time.sleep(1)
-
-		for i in range(0,254,1):
-			moveTiltServo(i)
-			movePanServo(i)
-			time.sleep(0.05)
-			i+=1
-		time.sleep(1)
-		print "Motion Test Finished"
-	else:
-		print "Error: Settings set to no Servo Connection"
-
-def moveToTarget(bearing,elevation):
-	""" Moves servos based on a bearing and elevation angle """
-	global centerBear,antennaBear,antennaEle
-	global tiltOffset, panOffset
-	global saveData
-	
-	temp = 0
-	# Uses the center bearing, and makes sure you don't do unnessessary spinning when you're close to 0/360
-	if((bearing>180) and (centerBear == 0)):
-			centerBear = 360
-	elif (((centerBear - bearing) > 180) and (centerBear >= 270)):
-			bearing = bearing + 360
-	elif (((centerBear - bearing) > 180) and (centerBear <=180)):
-			temp = centerBear
-			centerBear = 360 + temp
-	print ("\tBearing: %.0f" %(bearing+panOffset))
-	print ("\tElevation Angle: %.0f"%(elevation+tiltOffset))
-	# With new digital servos, can use map method as described here: http://arduino.cc/en/reference/map
-	panTo = ((bearing - (centerBear - 168)) * (servo_max - servo_min) / ((centerBear + 168) - (centerBear - 168)) + servo_min) + (255*panOffset/360)		# Get the correct numerical value for the servo position by adjusting based on offset, max and min
-	if panTo > 254: panTo = 254
-	if panTo < 0: panTo = 0
-	print "\tServo Degrees:"
-	if servoAttached:
-		movePanServo(math.trunc(panTo)) 
-	#If Error in Antenna Mount i.e. put antenna on backwards fix with changing 0-elevation to elevation (must change tilt stops too
-	tiltTo = (((0-elevation) - tilt_angle_min) * (servo_max - servo_min) / (tilt_angle_max - tilt_angle_min) + servo_min) + (255*(-tiltOffset)/360)		# Get the correct numerical value for the servo position by adjusting based on offset, max and min
-	print(tiltTo)
-	if tiltTo > 254: tiltTo = 254		# Don't go over the max
-	if tiltTo < 0: tiltTo = 0			# Don't go under the min
-	if servoAttached:		# Move the servos to the new locations if they're attacheed
-		moveTiltServo(math.trunc(tiltTo))
-	if (temp!= 0):
-			centerBear = temp
-		
-	# Write the new pointing location to the log file
-	logData("pointing",str(bearing)+','+str(elevation))
-	# Update the globals
-	antennaBear = bearing
-	antennaEle = elevation
-	
-def setServoAccel():
-	""" Sets the rate at which the servos accelerate """
-	global servoCOM, servoBaud, servoTimeout
-
-	try:
-		s = serial.Serial(str(servoCOM), baudrate = servoBaud, timeout = servoTimeout)		# Open the servo serial port
-
-		setAccel = [accelCommand,tiltChannel,tiltAccel,0]
-		s.write(setAccel)
-		setAccel = [accelCommand,panChannel,panAccel,0]
-		s.write(setAccel)
-
-		s.close()				# Close the servo serial port
-
-	except:
-		print("Error, could not set the servo acceleration, check com ports")
-		
-def setServoSpeed():
-	""" Sets the max speed at which the servos rotate """
-	global servoCOM, servoBaud, servoTimeout
-
-	try:
-		s = serial.Serial(str(servoCOM), baudrate = servoBaud, timeout = servoTimeout)			# Open the servo serial port
-
-		setSpeed = [speedCommand,tiltChannel,tiltSpeed,0]
-		s.write(setSpeed)
-		setSpeed = [speedCommand,panChannel,panSpeed,0]
-		s.write(setSpeed)
-
-		s.close()					# Close the servo serial port
-
-	except:
-		print("Error, could not set the servo speed, check com ports")
-
-def moveTiltServo(position):
-	""" Takes a single argument, moves the tilt servo to the position specified by the argument """
-	global antennaEle
-	
-	if servoAttached:
-		# try:
-		s = serial.Serial(str(servoCOM), baudrate = servoBaud, timeout = servoTimeout)		# Open the servo serial port
-		
-		### Move the tilt servo ###
-		if(position < 71):		  #80 degrees upper limit
-				moveTilt = [moveCommand,tiltChannel,chr(71)]
-		elif(position > 123):	   #5 degrees lower limit
-				moveTilt = [moveCommand,tiltChannel,chr(123)]
-		else:
-				moveTilt = [moveCommand,tiltChannel,chr(position)]
-		s.write(moveTilt)
-		print "\t\tMove Tilt: ", float(position)
-		
-		mGui.updateGround(0,5,((position - 127)*90/127.00))		 # Update the position the GUI says it's pointing to
-		mGui.manualRefresh()		# Refresh the GUI to show the new values
-
-		s.close()			# Close the servo serial port
-
-		# except:
-			# print("Error updating tilt servo position")
-		
-	else:
-		print "Error: Settings indicate no servo connection"
-
-def movePanServo(position):
-	""" Takes a single argument, moves the pan servo to the position specified by the argument """
-	global antennaBear,previousPan
-	global servoCOM, servoBaud, servoTimeout
-
-	if servoAttached:
-		# try:
-		s = serial.Serial(str(servoCOM), baudrate = servoBaud, timeout = servoTimeout)		# Open the servo serial port
-		
-		### Move the pan servo ###
-		if previousPan > position:
-			position += 1
-		previousPan = position
-		movePan = [moveCommand,panChannel,chr(255-position)]
-		s.write(movePan)
-		
-		print "\t\tMove Pan: ", float(position)
-		mGui.updateGround(0,4,centerBear +((position - 127)*90/127.00))			# Update the position the GUI says it's pointing to
-		mGui.manualRefresh()			# Refesh the GUI to show the new values
-
-		s.close()				# Close the servo serial port
-
-		# except:
-			# print("Error updating pan servo position")
-
-	else:
-		print "Error: Settings indicate no servo connection"
 		
 def bearing(trackerLat, trackerLon, remoteLat, remoteLon):
 	""" great circle bearing, see: http://www.movable-type.co.uk/scripts/latlong.html  """
@@ -2858,37 +2864,19 @@ def gen_checksum(data):
 	""" Generates a 32 character hash up to 10000 char length String(for checksum). If string is too long I've notice length irregularities in checksum """
 	return hashlib.md5(data).hexdigest()
 	
-def logData(type,msg):
-	""" Logs the message in the correct file designated in the type argument """
-	global rfdLog, stillImageLog, balloonLocationLog, pointingLog
-	
-	try:
-		if type == "RFD":
-			f = open(rfdLog,'a')
-		elif type == "stillImage":
-			f = open(stillImageLog,'a')
-		elif type == "balloonLocation":
-			f = open(balloonLocationLog,'a')
-		elif type == "pointing":
-			f = open(pointingLog,'a')
-		f.write(str(datetime.today().strftime("%m/%d/%Y %H:%M:%S"))+','+msg+'\n')
-		f.close()
-	except:
-		print("Error logging data: "+type+','+msg)
-	
 if __name__ == "__main__":
 	app=QtGui.QApplication.instance()		# checks if QApplication already exists 
-	if not app:		# create QApplication if it doesnt exist 
+	if not app:								# create QApplication if it doesnt exist 
 		app = QtGui.QApplication(sys.argv)
 		
 	# Let's .jpg images be shown by adding the imageformats folder to to the path (http://www.qtcentre.org/threads/49119-JPG-not-working-when-calling-setPixmap()-on-QLabel)
 	path = r"C:\Users\Ground Station\Anaconda2\Lib\site-packages\PySide\plugins"
 	app.addLibraryPath(path)
 	
-	mGui = MainWindow()			# Launch the main window
-	mGui.showMaximized()					# Shows the main window
+	mGui = MainWindow()						# Launch the main window
+	mGui.showMaximized()					# Shows the main window maximized
 	sys.stdout = Unbuffered(sys.stdout)		# Sets up an unbuffered stream
-	app.exec_()					# Starts the application
+	app.exec_()								# Starts the application
 	
 	### At the close of the program, write each payload's information to a file ###
 	for each in payloadList:
