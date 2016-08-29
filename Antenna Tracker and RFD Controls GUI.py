@@ -112,7 +112,7 @@ rfdListenOnline = False
 payloadList = []		# List of payloads in this flight
 currentBalloon = None
 mapMade = False
-googleMapsApiKey = 'AIzaSyDxwliW8hKUg072nJcVn3TtWlSEmY9rEvA'		# https://developers.google.com/maps/documentation/javascript/get-api-key
+googleMapsApiKey = ''		# https://developers.google.com/maps/documentation/javascript/get-api-key
 
 # Save Data Boolean
 saveData = False
