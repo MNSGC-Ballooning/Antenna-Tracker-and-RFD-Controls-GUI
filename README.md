@@ -9,7 +9,7 @@ RFD controls are added as well, allowing communication with a raspberry Pi runni
 
 Uses [Anaconda](https://www.continuum.io/)
 
-You will need a [Google Maps API key](https://developers.google.com/maps/documentation/javascript/get-api-key)to fully use this software. If you do not have one, make sure the box labelled "Internet Access" in the settings panel is not checked.
+You will need a [Google Maps API key](https://developers.google.com/maps/documentation/javascript/get-api-key) to fully use this software. If you do not have one, make sure the box labelled "Internet Access" in the settings panel is not checked.
 
 ### There are 3 autotrack methods available: Iridium, APRS, and RFD.
 
