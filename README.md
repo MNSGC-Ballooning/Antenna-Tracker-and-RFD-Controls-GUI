@@ -16,7 +16,7 @@ Uses [Anaconda](https://www.continuum.io/)
 -**APRS tracking:** set up to handle an [Eagle flight computer](http://www.highaltitudescience.com/products/eagle-flight-computer).
 
 -**RFD tracking:** set up to work with the software on the raspberry pi. The format for the GPS string that needs to be received is as follows: "GPS:hours,minutes,seconds,latitude,longitude,altitude,satellites!"
-Currently, this information is provided by an adafruit GPS Breakout v3 attached to the Pi via USB-to-TTY cable.
+This information is provided by any serial GPS module. We use an adafruit GPS Breakout v3 or a UBlox GPS attached to the Pi via serial converter.
 
 
 ## Operation:
@@ -32,6 +32,6 @@ Currently, this information is provided by an adafruit GPS Breakout v3 attached 
 -Select if you'd like to save data and if you'd like to graph your tracking in the Graphing and Logging section. Also choose whether or not you have internet access
 
 -Hit update settings, and the calibration window will appear if needed. Follow the procedure to calibrate your IMU. When the gyro, accelerometer, and magnetometer all display a value of 3, place your IMU back onto the tracker, and hit ready to get your location and center bearing.
-If you're using the RFD, go into the RFD tab and make sure that RFD Listen is on by clicking the listen button. Press the launch antenna tracker button to begin tracking the most recent received balloon position.
+If you're using the RFD, go into the RFD tab and see that RFD Listen is on. Press the launch antenna tracker button to begin tracking the most recent received balloon position, and to update with each new location.
 
 -Manual controls will require that you are not currently autotracking (except trim).
