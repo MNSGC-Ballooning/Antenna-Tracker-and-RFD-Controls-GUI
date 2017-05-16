@@ -278,7 +278,7 @@
         <enum>QTabWidget::West</enum>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>5</number>
        </property>
        <widget class="QWidget" name="Settings">
         <attribute name="title">
@@ -699,23 +699,71 @@
                <enum>QFrame::Raised</enum>
               </property>
               <layout class="QGridLayout" name="gridLayout_13">
-               <item row="1" column="0">
-                <widget class="QCheckBox" name="servoAttached">
+               <item row="5" column="1">
+                <widget class="QLineEdit" name="aprsCallsign">
                  <property name="text">
-                  <string>Servos Connected</string>
+                  <string/>
                  </property>
-                 <property name="checked">
-                  <bool>false</bool>
+                 <property name="placeholderText">
+                  <string>KD0AWK-8</string>
                  </property>
                 </widget>
                </item>
-               <item row="3" column="0">
-                <widget class="QCheckBox" name="arduinoAttached">
+               <item row="2" column="0">
+                <widget class="QCheckBox" name="rfdAttached">
                  <property name="text">
-                  <string>Arduino Connected</string>
+                  <string>RFD Connected</string>
                  </property>
-                 <property name="checked">
-                  <bool>false</bool>
+                </widget>
+               </item>
+               <item row="6" column="1">
+                <widget class="QLineEdit" name="iridiumIMEI">
+                 <property name="placeholderText">
+                  <string>300234064909640</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="1">
+                <widget class="QLineEdit" name="aprsCOM">
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="placeholderText">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QLineEdit" name="servoCOM">
+                 <property name="placeholderText">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QLineEdit" name="rfdCOM">
+                 <property name="placeholderText">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
+               <item row="6" column="0">
+                <widget class="QLabel" name="IMEILabel">
+                 <property name="text">
+                  <string>Iridium IMEI</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1">
+                <widget class="QLineEdit" name="arduinoCOM">
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="placeholderText">
+                  <string/>
                  </property>
                 </widget>
                </item>
@@ -745,88 +793,23 @@
                  </property>
                 </widget>
                </item>
-               <item row="3" column="1">
-                <widget class="QLineEdit" name="arduinoCOM">
+               <item row="1" column="0">
+                <widget class="QCheckBox" name="servoAttached">
                  <property name="text">
-                  <string/>
+                  <string>Servos Connected</string>
                  </property>
-                 <property name="placeholderText">
-                  <string/>
+                 <property name="checked">
+                  <bool>false</bool>
                  </property>
                 </widget>
                </item>
-               <item row="4" column="1">
-                <widget class="QLineEdit" name="aprsCOM">
+               <item row="3" column="0">
+                <widget class="QCheckBox" name="arduinoAttached">
                  <property name="text">
-                  <string/>
+                  <string>Arduino Connected</string>
                  </property>
-                 <property name="placeholderText">
-                  <string/>
-                 </property>
-                </widget>
-               </item>
-               <item row="6" column="1">
-                <widget class="QLineEdit" name="iridiumIMEI">
-                 <property name="placeholderText">
-                  <string>300234064909640</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="6" column="0">
-                <widget class="QLabel" name="IMEILabel">
-                 <property name="text">
-                  <string>Iridium IMEI</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="1">
-                <widget class="QLineEdit" name="servoCOM">
-                 <property name="placeholderText">
-                  <string/>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="1">
-                <widget class="QLineEdit" name="rfdCOM">
-                 <property name="placeholderText">
-                  <string/>
-                 </property>
-                </widget>
-               </item>
-               <item row="5" column="1">
-                <widget class="QLineEdit" name="aprsCallsign">
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="placeholderText">
-                  <string>KD0AWK-8</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="0">
-                <widget class="QCheckBox" name="rfdAttached">
-                 <property name="text">
-                  <string>RFD Connected</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="7" column="0">
-                <widget class="QLabel" name="calibrationGoalLabel">
-                 <property name="text">
-                  <string>      Calibration Goal</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="7" column="1">
-                <widget class="QLineEdit" name="calibrationGoalVal">
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="placeholderText">
-                  <string>8</string>
+                 <property name="checked">
+                  <bool>false</bool>
                  </property>
                 </widget>
                </item>
@@ -1463,6 +1446,13 @@
                 </widget>
                </item>
                <item>
+                <widget class="QPushButton" name="requestStatusButton">
+                 <property name="text">
+                  <string>Request Status</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QPushButton" name="getPiRuntimeDataButton">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -1528,19 +1518,6 @@
                <enum>QFrame::Raised</enum>
               </property>
               <layout class="QGridLayout" name="gridLayout_19">
-               <item row="0" column="0">
-                <widget class="QPushButton" name="stillImageOnlineButton">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string>Start</string>
-                 </property>
-                </widget>
-               </item>
                <item row="1" column="1">
                 <widget class="QPushButton" name="mostRecentImageButton">
                  <property name="sizePolicy">
@@ -1575,7 +1552,23 @@
                  </property>
                 </widget>
                </item>
-               <item row="0" column="1">
+               <item row="2" column="0" colspan="2">
+                <widget class="QPushButton" name="imageDataTxtButton">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Select Image</string>
+                 </property>
+                 <property name="flat">
+                  <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="0" colspan="2">
                 <widget class="QLabel" name="stillImageOnlineLabel">
                  <property name="palette">
                   <palette>
@@ -1628,22 +1621,6 @@
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="0" colspan="2">
-                <widget class="QPushButton" name="imageDataTxtButton">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string>Select Image</string>
-                 </property>
-                 <property name="flat">
-                  <bool>false</bool>
                  </property>
                 </widget>
                </item>
@@ -2093,7 +2070,7 @@
            </layout>
           </widget>
          </item>
-         <item row="2" column="3">
+         <item row="0" column="2" rowspan="3">
           <widget class="QFrame" name="stillImageReceiverFrame">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
@@ -2156,16 +2133,6 @@
              </widget>
             </item>
            </layout>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="QFrame" name="frame_20">
-           <property name="frameShape">
-            <enum>QFrame::StyledPanel</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Raised</enum>
-           </property>
           </widget>
          </item>
         </layout>

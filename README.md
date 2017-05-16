@@ -9,8 +9,6 @@ RFD controls are added as well, allowing communication with a raspberry Pi runni
 
 Uses [Anaconda](https://www.continuum.io/)
 
-You will need a [Google Maps API key](https://developers.google.com/maps/documentation/javascript/get-api-key) to fully use this software. If you do not have one, make sure the box labelled "Internet Access" in the settings panel is not checked.
-
 ### There are 3 autotrack methods available: Iridium, APRS, and RFD.
 
 -**Iridium tracking:** requires internet access so that you can reach the server holding the information controlled by MSU-Borealis.
@@ -18,17 +16,22 @@ You will need a [Google Maps API key](https://developers.google.com/maps/documen
 -**APRS tracking:** set up to handle an [Eagle flight computer](http://www.highaltitudescience.com/products/eagle-flight-computer).
 
 -**RFD tracking:** set up to work with the software on the raspberry pi. The format for the GPS string that needs to be received is as follows: "GPS:hours,minutes,seconds,latitude,longitude,altitude,satellites!"
-Currently, this information is provided by an arduino nano with a adafruit GPS Breakout v3 attached to the Pi via USB cable.
+Currently, this information is provided by an adafruit GPS Breakout v3 attached to the Pi via USB-to-TTY cable.
 
 
 ## Operation:
 
--Connect your RFD, mini maestro, and arduino, and run the code through Spyder. Ports should autofill in the connections section. If you do not want to use the arduino/IMU, select the cardinal direction that your tracker is facing.
-Select your methods of autotrack, they can all be run simultaneously. Select if you'd like to save data and if you'd like to graph your tracking in the Graphing and Logging section. Also choose whether or not you have internet access
+-Get a [Google Maps API key](https://developers.google.com/maps/documentation/javascript/get-api-key). Once you have the key, put it in the file api_key.
 
--Hit update settings, and the calibration window will appear. When the gyro, accelerometer, and magnetometer all display a value of 3, place your IMU back onto the tracker, and hit ready to get your location and center bearing.
-If you're using the RFD, go into the RFD tab and turn on RFD Listen by clicking the listen button. Press the launch antenna tracker button to begin tracking the most recent received balloon position.
+-Make sure that your Arduino is running GroundStation_UNO_V3, and has the IMU connected.
 
--In order to use the still image system, you need to disable both the RFD commands, and the RFD Listen. 
+-Connect your RFD, mini maestro, and arduino, and run the code through Anaconda Prompt. Ports should autofill in the connections section. If you do not want to use the arduino/IMU, select the cardinal direction that your tracker is facing.
 
--Manual controls will require that your autotrack method is set to disabled.
+-Select your methods of autotrack, they can all be run simultaneously. If using Iridium or APRS, enter your IMEI or callsign.
+
+-Select if you'd like to save data and if you'd like to graph your tracking in the Graphing and Logging section. Also choose whether or not you have internet access
+
+-Hit update settings, and the calibration window will appear if needed. Follow the procedure to calibrate your IMU. When the gyro, accelerometer, and magnetometer all display a value of 3, place your IMU back onto the tracker, and hit ready to get your location and center bearing.
+If you're using the RFD, go into the RFD tab and make sure that RFD Listen is on by clicking the listen button. Press the launch antenna tracker button to begin tracking the most recent received balloon position.
+
+-Manual controls will require that you are not currently autotracking (except trim).
