@@ -30,8 +30,8 @@ class StillImageSystem(QtCore.QObject):
 		self.mainWindow = MainWindow
 
 		# Picture Qualities
-		self.picWidth = 650
-		self.picHeight = 450
+		self.picWidth = 150
+		self.picHeight = 100
 		self.picSharpness = 0
 		self.picBrightness = 50
 		self.picContrast = 0
@@ -52,12 +52,13 @@ class StillImageSystem(QtCore.QObject):
 
 	def getMostRecentImage(self,requestedImageName):
 		""" Still Image System: Get the Most Recent Image through the RFD 900 """
-		print('entered')
+		self.mainWindow.stillNewText.emit("Requesting Most Recent Image")
 		
 		### Write 1 until you get the acknowledge back ###
 		self.rfdSer.write('IMAGE;1!')
 		timeCheck = time.time() + 1
-		while self.rfdSer.read() != 'A':
+		killTime = time.time() + 10
+		while (self.rfdSer.read() != 'A') and (time.time()<killTime):
 			if timeCheck < time.time():			# Make sure you don't print out a huge stream if you get the wrong response
 				print "Waiting for Acknowledge"
 				self.mainWindow.stillNewText.emit("Waiting for Acknowledge")
@@ -104,11 +105,13 @@ class StillImageSystem(QtCore.QObject):
 
 	def getImageDataTxt(self):
 		""" Still Image System: Requests imagedata.txt, for the purpose of selecting a specific image to download """
+		self.mainWindow.stillNewText.emit("Requesting List of Images")
 		
 		### Send the Pi 2 until the acknowledge is received ###
 		self.rfdSer.write('IMAGE;2!')
 		timeCheck = time.time() + 1
-		while self.rfdSer.read() != 'A':
+		killTime = time.time() + 10
+		while (self.rfdSer.read() != 'A') and (time.time()<killTime):
 			if timeCheck < time.time():				# Make sure you don't print out a huge stream if the wrong thing is received
 				print "Waiting for Acknowledge"
 				self.mainWindow.stillNewText.emit("Waiting for Acknowledge")
@@ -147,6 +150,7 @@ class StillImageSystem(QtCore.QObject):
 
 	def getRequestedImage(self,data):
 		""" Still Image System: Retrieves the image specified in the argument, deletes the confirmation window if needed """
+		self.mainWindow.stillNewText.emit("Requesting Image")
 
 		### Continuously write 3 until the acknowledge is received ###
 		self.rfdSer.write('IMAGE;3!')
@@ -161,8 +165,8 @@ class StillImageSystem(QtCore.QObject):
 			self.rfdSer.write('IMAGE;3!')
 		# self.sync(self.rfdSer)							# Syncronize the data streams of the ground station and the Pi before starting
 		imagepath = data[0:15]
-		self.rfdSer.write('B')
-		self.rfdSer.write(str(data))				# Tell the pi which picture you want to download
+		# self.rfdSer.write('B')
+		self.rfdSer.write('RQ;'+str(data))				# Tell the pi which picture you want to download
 		timecheck = time.time()
 		print "Image will be saved as:", imagepath
 		self.mainWindow.stillNewText.emit("Image will be saved as: " + str(imagepath))
@@ -186,7 +190,9 @@ class StillImageSystem(QtCore.QObject):
 		### Send the Pi 4 until the acknowledge is received ###
 		self.rfdSer.write('IMAGE;4!')
 		timeCheck = time.time()
-		while (self.rfdSer.read() != 'A') & (time.time()<killtime):
+		acknowledge = self.rfdSer.readline()
+		while (acknowledge != 'Ack\n') & (time.time()<killtime):
+			acknowledge = self.rfdSer.readline()
 			if time.time() < timeCheck:					# Make sure you don't print out a huge stream if you get the wrong response
 				print "Waiting for Acknowledge"
 				self.mainWindow.stillNewText.emit("Waiting for Acknowledge")
@@ -234,67 +240,6 @@ class StillImageSystem(QtCore.QObject):
 			if time.time() > termtime:
 				done = True
 				self.mainWindow.stillNewText.emit('Failed to Receive Settings')
-			
-		
-		## Open the file camerasettings.txt in write mode, and write everything the Pi is sending ###
-		# try:
-			# file = open("camerasettings.txt","w")
-			# print "File Successfully Created"
-			# self.mainWindow.stillNewText.emit("File Successfully Created")
-		# except:				# If there's an error opening the file, print the message and return
-			# print "Error with Opening File"
-			# self.mainWindow.stillNewText.emit("Error with Opening File")
-			# sys.stdout.flush()
-			# self.mainWindow.stillSystemFinished.emit()		# Emit the finished signal
-			# return
-		# timecheck = time.time()
-		# sys.stdin.flush()				# Clear the buffer
-		# temp = self.rfdSer.read()
-		# while (temp != "\r") & (temp != ""):		# Write everything the radio is receiving to the file
-			# file.write(temp)
-			# temp = self.rfdSer.read()
-		# file.close()
-		# print "Receive Time =", (time.time() - timecheck)
-		# self.mainWindow.stillNewText.emit("Receive Time = " + str((time.time() - timecheck)))
-		# sys.stdout.flush()
-		
-		## Open the file camerasettings.txt in read mode, and confirm/set the globals based on what's in the settings file ###
-		# try:
-			# file = open("camerasettings.txt","r")
-			# twidth = file.readline()			 # Default = (650,450); range up to
-			# self.picWidth = int(twidth)
-			# print("Width = " + str(self.picWidth))
-			# self.mainWindow.stillNewText.emit("Width = " + str(self.picWidth))
-			# theight = file.readline()			 # Default = (650,450); range up to
-			# self.picHeight = int(theight)
-			# print("Height = " + str(self.picHeight))
-			# self.mainWindow.stillNewText.emit("Height = " + str(self.picHeight))
-			# tsharpness = file.readline()			  # Default  =0; range = (-100 to 100)
-			# self.picSharpness = int(tsharpness)
-			# print("Sharpness = " + str(self.picSharpness))
-			# self.mainWindow.stillNewText.emit("Sharpness = " + str(self.picSharpness))
-			# tbrightness = file.readline()			 # Default = 50; range = (0 to 100)
-			# self.picBrightness = int(tbrightness)
-			# print("Brightness = " + str(self.picBrightness))
-			# self.mainWindow.stillNewText.emit("Brightness = " + str(self.picBrightness))
-			# tcontrast = file.readline()			   # Default = 0; range = (-100 to 100)
-			# self.picContrast = int(tcontrast)
-			# print("Contrast = " + str(self.picContrast))
-			# self.mainWindow.stillNewText.emit("Contrast = " + str(self.picContrast))
-			# tsaturation = file.readline()			 # Default = 0; range = (-100 to 100)
-			# self.picSaturation = int(tsaturation)
-			# print("Saturation = " + str(self.picSaturation))
-			# self.mainWindow.stillNewText.emit("Saturation = " + str(self.picSaturation))
-			# tiso = file.readline()					  # Unknown Default; range = (100 to 800)
-			# self.picISO = int(tiso)
-			# print("ISO = " + str(self.picISO))
-			# self.mainWindow.stillNewText.emit("ISO = " + str(self.picISO))
-			# file.close()
-			# self.mainWindow.newPicSliderValues.emit([self.picWidth,self.picHeight,self.picSharpness,self.picBrightness,self.picContrast,self.picSaturation,self.picISO])
-		# except Exception, e:
-			# print(str(e))
-			# print "Camera Setting Retrieval Error"
-			# self.mainWindow.stillNewText.emit("Camera Setting Retrieval Error")
 		
 		self.mainWindow.stillSystemFinished.emit()		# Emit the finished signal
 
@@ -302,6 +247,7 @@ class StillImageSystem(QtCore.QObject):
 			
 	def sendNewPicSettings(self,settings):
 		""" Still Image System: Send New Camera Settings to the Pi """
+		self.mainWindow.stillNewText.emit("Attempting to Update Camera Settings")
 
 		# Update the instance variables
 		self.picWidth = int(settings[0])
@@ -312,46 +258,39 @@ class StillImageSystem(QtCore.QObject):
 		self.picSaturation = int(settings[5])
 		self.picISO = int(settings[6])
 		
-		## Open the camerasettings.txt file, and record the new values ###
-		# file = open("camerasettings.txt","w")
-		# file.write(str(self.picWidth)+"\n")
-		# file.write(str(self.picHeight)+"\n")
-		# file.write(str(self.picSharpness)+"\n")
-		# file.write(str(self.picBrightness)+"\n")
-		# file.write(str(self.picContrast)+"\n")
-		# file.write(str(self.picSaturation)+"\n")
-		# file.write(str(self.picISO)+"\n")
-		# file.close()
-		
 		### Continue sending 5 until the acknowledge is received from the Pi ###
 		self.rfdSer.write('IMAGE;5!')
-		acknowledge = self.rfdSer.read()
+		# acknowledge = self.rfdSer.read()
+		acknowledge = self.rfdSer.readline()
 		timeCheck = time.time() + 1
-		termtime = time.time() + 10
-		while acknowledge != 'A' and time.time() < termtime:
-			acknowledge = self.rfdSer.read()
-			print(acknowledge)
+		killTime = time.time() + 10
+		while acknowledge != 'Ack1\n' and time.time() < killTime:
+			acknowledge = self.rfdSer.readline()
+			# acknowledge = self.rfdSer.read()
 			if timeCheck < time.time():
 				print "Waiting for Acknowledge"
 				self.mainWindow.stillNewText.emit("Waiting for Acknowledge")
 				timeCheck = time.time() + 1
-			self.rfdSer.write('IMAGE;5!')
+			self.rfdSer.write('IMAGE;5!\n')
 			timecheck = time.time()
 			
-		if time.time() > termtime:
+		if time.time() > killTime:
 			self.mainWindow.stillNewText.emit('No Acknowledge Received, Settings not Updated')
 			return
 		
-		termtime = time.time() + 10
+		killTime = time.time() + 10
 		settingsStr = str(self.picWidth) + ',' + str(self.picHeight) + ',' + str(self.picSharpness) + ',' + str(self.picBrightness) + ',' + str(self.picContrast) + ',' + str(self.picSaturation) + ',' + str(self.picISO)
-		while self.rfdSer.read() != 'B' and time.time() < termtime:
+		acknowledge = self.rfdSer.readline()
+		while acknowledge != 'Ack2\n' and time.time() < killTime:
+			print('here2')
 			if timeCheck < time.time():
 				print "Waiting for Acknowledge"
 				self.mainWindow.stillNewText.emit("Waiting for Acknowledge")
 				timeCheck = time.time() + 1
-			self.rfdSer.write('A'+settingsStr+'\n')
+			acknowledge = self.rfdSer.readline()
+			self.rfdSer.write('RQ/'+settingsStr+'\n')
 			
-		if time.time() > termtime:
+		if time.time() > killTime:
 			self.mainWindow.stillNewText.emit('No Acknowledge Received on Settings Update\n')
 		else:
 			self.mainWindow.stillNewText.emit('Settings Updated\n')
@@ -494,12 +433,15 @@ class StillImageSystem(QtCore.QObject):
 		### Setup the Progress Bar ###
 		stillProgress = 0
 		try:
-			photoSize = self.rfdSer.readline()			# The first thing you get is the total picture size so you can make the progress bar
+			temp = self.rfdSer.readline()
+			print(temp)
+			photoSize = temp			# The first thing you get is the total picture size so you can make the progress bar
 			print("Total Picture Size: ",photoSize)
 			self.mainWindow.stillNewText.emit("Total Picture Size: " + photoSize)
 			stillPhotoMax = int(photoSize)
 			self.mainWindow.stillNewProgress.emit(stillProgress,stillPhotoMax)
-		except:
+		except Exception, e:
+			print(str(e))
 			print("Error retrieving picture size")
 			self.mainWindow.stillNewText.emit("Error retrieving picture size")
 			stillPhotoMax = 1
