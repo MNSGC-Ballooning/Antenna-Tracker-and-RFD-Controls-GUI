@@ -188,6 +188,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.rfdListenButton.clicked.connect(self.rfdListenButtonPress)
 		self.getPiRuntimeDataButton.clicked.connect(self.getPiRuntimeDataButtonPress)
 		self.requestStatusButton.clicked.connect(self.requestDeviceStatus)
+		
+		# Save Data Boolean
+		self.saveData = False
 
 		# Still Image Control Button Links
 		self.mostRecentImageButton.clicked.connect(lambda: self.stillImageButtonPress('mostRecent'))
@@ -208,13 +211,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		# Initial Still Image System Picture Display Setup
 		self.stillImageOnline = False
 		self.stillImageStall = False
+		self.picHFlip = False
+		self.picVFlip = False
 		self.displayPhotoPath = "Images/MnSGC_Logo_highRes.png"  # The starting display photo is the logo of the MnSGC
 		self.tabs.resizeEvent = self.resizePicture
 		self.picLabel.setScaledContents(True)
-		pm = QPixmap(self.displayPhotoPath)		# Create a pixmap from the default image
-		scaledPm = pm.scaled(self.picLabel.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation)
-		self.picLabel.setPixmap(scaledPm)		# Set the label to the map
-		self.picLabel.show()		# Show the image
+		self.updatePicture(self.displayPhotoPath)
+		# pm = QPixmap(self.displayPhotoPath)		# Create a pixmap from the default image
+		# scaledPm = pm.scaled(self.picLabel.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation)
+		# self.picLabel.setPixmap(scaledPm)		# Set the label to the map
+		# self.picLabel.show()		# Show the image
 
 		# Picture Qualities
 		self.picWidth = 650
@@ -270,9 +276,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.centerBear = 0.00
 		self.panOffset = 0.00
 		self.tiltOffset = 0.00
-
-		# Save Data Boolean
-		self.saveData = False
 
 		# SQL Access
 		self.dbHost = "153.90.202.51"
@@ -563,8 +566,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 					self.stillImageSystem.requestedImageStart.connect(self.stillImageSystem.getRequestedImage)
 					self.stillImageSystem.getSettingsStart.connect(self.stillImageSystem.getPicSettings)
 					self.stillImageSystem.sendSettingsStart.connect(self.stillImageSystem.sendNewPicSettings)
-					self.stillImageSystem.vFlipStart.connect(self.stillImageSystem.picVerticalFlip)
-					self.stillImageSystem.hFlipStart.connect(self.stillImageSystem.picHorizontalFlip)
 					self.stillImageSystem.timeSyncStart.connect(self.stillImageSystem.time_sync)
 					self.stillImageSystem.stillInterrupt.connect(lambda: self.stillImageSystem.setInterrupt(True))
 					
@@ -934,18 +935,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			self.stillImageSystem.sendSettingsStart.emit(picSettings)
 			
 		if arg == 'HFlip':
-			self.stillImageStart()
-			if self.rfdListenOnline:
-				self.stillImageStall = True
-				self.rfdListenStop()
-			self.stillImageSystem.hFlipStart.emit()
+			if self.picHFlip:
+				self.picHFlip = False
+			else:
+				self.picHFlip = True
+			self.updatePicture(self.displayPhotoPath)
 			
 		if arg == 'VFlip':
-			self.stillImageStart()
-			if self.rfdListenOnline:
-				self.stillImageStall = True
-				self.rfdListenStop()
-			self.stillImageSystem.vFlipStart.emit()
+			if self.picVFlip:
+				self.picVFlip = False
+			else:
+				self.picVFlip = True
+			self.updatePicture(self.displayPhotoPath)
 			
 		if arg == 'timeSync':
 			self.stillImageStart()
@@ -960,12 +961,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 	def updatePicture(self, displayPath):
 		""" Updates the still image system picture display to the picture associated with the path """
-
-		print("Updating Picture")
+		
 		pm = QPixmap(str(displayPath))		# Create a pixmap from the default image
+		if self.picHFlip:
+			if self.picVFlip:
+				pm = pm.transformed(QTransform().scale(-1,-1))
+			else:
+				pm = pm.transformed(QTransform().scale(-1,1))
+		elif self.picVFlip:
+			pm = pm.transformed(QTransform().scale(1,-1))
+		print("Updating Picture")
 		scaledPm = pm.scaled(self.picLabel.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
 		self.picLabel.setPixmap(scaledPm)			# Set the label to the map
 		self.picLabel.show()				# Show the image
+		self.displayPhotoPath = displayPath
 		
 		self.logData('stillImage','newPic'+','+displayPath)
 

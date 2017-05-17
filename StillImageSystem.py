@@ -18,8 +18,6 @@ class StillImageSystem(QtCore.QObject):
 	requestedImageStart = pyqtSignal(str)
 	getSettingsStart = pyqtSignal()
 	sendSettingsStart = pyqtSignal(list)
-	vFlipStart = pyqtSignal()
-	hFlipStart = pyqtSignal()
 	timeSyncStart = pyqtSignal()
 	stillInterrupt = pyqtSignal()
 
@@ -333,56 +331,6 @@ class StillImageSystem(QtCore.QObject):
 		
 		self.mainWindow.stillSystemFinished.emit()		# Emit the finished signal
 		return
-		
-	def picVerticalFlip(self):
-		""" Still Image System: Flips the image vertically """	
-			
-		### Send the pi 0 until the acknowledge is received, or until too much time has passed ###
-		self.rfdSer.write('IMAGE;0!')
-		termtime = time.time() + 10
-		timeCheck = time.time() + 1
-		while self.rfdSer.read() != 'A':
-			if timeCheck < time.time():
-				print("Waiting for Acknowledge")
-				self.mainWindow.stillNewText.emit("Waiting for Acknowledge")
-				timeCheck = time.time() + 1
-			self.rfdSer.write('IMAGE;0!')
-			if termtime < time.time():
-				print("No Acknowldeg Received, Connection Error")
-				self.mainWindow.stillNewText.emit("No Acknowledge Received, Connect Error")
-				sys.stdout.flush()
-
-				self.mainWindow.stillSystemFinished.emit()		# Emit the finished signal
-				return
-				
-		print("Camera Vertically Flipped")
-		self.mainWindow.stillNewText.emit("Camera Vertically Flipped")
-		self.mainWindow.stillSystemFinished.emit()		# Emit the finished signal
-			
-	def picHorizontalFlip(self):
-		""" Still Image System: Flips the image Horizontally """
-					
-		### Send the pi 9 until the acknowledge is received, or until too much time has passed ###
-		self.rfdSer.write('IMAGE;9!')
-		termtime = time.time() + 10
-		timeCheck = time.time() + 1
-		while self.rfdSer.read() != 'A':
-			if timeCheck < time.time():
-				print("Waiting for Acknowledge")
-				self.mainWindow.stillNewText.emit("Waiting for Acknowledge")
-				timeCheck = time.time() + 1
-			self.rfdSer.write('IMAGE;9!')
-			if termtime < time.time():
-				print("No Acknowldeg Received, Connection Error")
-				self.mainWindow.stillNewText.emit("No Acknowledge Received, Connect Error")
-				sys.stdout.flush()
-
-				self.mainWindow.stillSystemFinished.emit()		# Emit the finished signal
-				return
-				
-		print("Camera Horizontally Flipped")
-		self.mainWindow.stillNewText.emit("Camera Horizontally Flipped")
-		self.mainWindow.stillSystemFinished.emit()		# Emit the finished signal
 		
 	def time_sync(self):
 		""" Still Image System: Syncronizes the Pi and ground station so that the connection test can be run """
