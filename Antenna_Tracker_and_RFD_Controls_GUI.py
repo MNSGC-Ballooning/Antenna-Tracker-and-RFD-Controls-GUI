@@ -486,8 +486,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 				self.saveData = True
 				timestamp = str(datetime.today().strftime("%m-%d-%Y %H-%M-%S"))
 
-				if not os.path.exists(Logs):
-					os.makedirs(Logs)
+				if not os.path.exists("Logs"):
+					os.makedirs("Logs")
 				try:
 					# Create the log files
 					self.rfdLog = "Logs/"+timestamp + ' ' + "RFDLOG.txt"
