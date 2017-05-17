@@ -486,19 +486,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 				self.saveData = True
 				timestamp = str(datetime.today().strftime("%m-%d-%Y %H-%M-%S"))
 
-				# Create the log files
-				self.rfdLog = "Logs/"+timestamp + ' ' + "RFDLOG.txt"
-				f = open(self.rfdLog, 'w')
-				f.close()
-				self.stillImageLog = "Logs/"+timestamp + ' ' + "STILLIMAGELOG.txt"
-				f = open(self.stillImageLog, 'w')
-				f.close()
-				self.balloonLocationLog = "Logs/"+timestamp + ' ' + "BALLOONLOCATIONLOG.txt"
-				f = open(self.balloonLocationLog, 'w')
-				f.close()
-				self.pointingLog = "Logs/"+timestamp + ' ' + "POINTINGLOG.txt"
-				f = open(self.pointingLog, 'w')
-				f.close()
+				if not os.path.exists(Logs):
+					os.makedirs(Logs)
+				try:
+					# Create the log files
+					self.rfdLog = "Logs/"+timestamp + ' ' + "RFDLOG.txt"
+					f = open(self.rfdLog, 'w')
+					f.close()
+					self.stillImageLog = "Logs/"+timestamp + ' ' + "STILLIMAGELOG.txt"
+					f = open(self.stillImageLog, 'w')
+					f.close()
+					self.balloonLocationLog = "Logs/"+timestamp + ' ' + "BALLOONLOCATIONLOG.txt"
+					f = open(self.balloonLocationLog, 'w')
+					f.close()
+					self.pointingLog = "Logs/"+timestamp + ' ' + "POINTINGLOG.txt"
+					f = open(self.pointingLog, 'w')
+					f.close()
+				except Exception, e:
+					print(str(e))
 		elif not self.saveDataCheckbox.isChecked():
 			self.saveData = False
 			
