@@ -365,18 +365,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			if not self.useAPRS:
 				return
 		
-		if update.getSeconds() < self.currentBalloon.getSeconds():		# Makes sure it's the newest location
-			if self.currentBalloon.getTrackingMethod() == 'RFD':
-				if (not self.useIridium or not self.useAPRS) and self.useRFD:
-					return
+		# Make sure it's a good location
+		if ((update.getLat() == 0.0) or (update.getLon() == 0.0) or (update.getAlt() == 0.0)):		# Don't consider updates with bad info to be new updates
+			return
+		
+		# Makes sure it's the newest location
+		if update.getSeconds() < self.currentBalloon.getSeconds():
+			return
+			# Confirm that update matches a selected tracking method
+			# if self.currentBalloon.getTrackingMethod() == 'RFD':
+				# if (not self.useIridium or not self.useAPRS) and self.useRFD:
+					# return
 					
-			if self.currentBalloon.getTrackingMethod() == 'Iridium':
-				if (not self.useRFD or not self.useAPRS) and self.useIridium:
-					return
+			# if self.currentBalloon.getTrackingMethod() == 'Iridium':
+				# if (not self.useRFD or not self.useAPRS) and self.useIridium:
+					# return
 					
-			if self.currentBalloon.getTrackingMethod() == 'APRS':
-				if (not self.useIridium or not self.useRFD) and self.useAPRS:
-					return
+			# if self.currentBalloon.getTrackingMethod() == 'APRS':
+				# if (not self.useIridium or not self.useRFD) and self.useAPRS:
+					# return
 			
 
 		# If you haven't returned by now, update the graphing arrays
@@ -475,26 +482,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			if not self.saveData:
 				self.saveData = True
 				timestamp = str(datetime.today().strftime("%m-%d-%Y %H-%M-%S"))
-				if not os.path.exists("Logs"):		# Create the Logs folder if there isn't one
-					os.makedirs("Logs")
-				try:
-					# Create the log files
-					self.rfdLog = "Logs/"+timestamp + ' ' + "RFDLOG.txt"
-					f = open(self.rfdLog, 'w')
-					f.close()
-					self.stillImageLog = "Logs/"+timestamp + ' ' + "STILLIMAGELOG.txt"
-					f = open(self.stillImageLog, 'w')
-					f.close()
-					self.balloonLocationLog = "Logs/"+timestamp + ' ' + "BALLOONLOCATIONLOG.txt"
-					f = open(self.balloonLocationLog, 'w')
-					f.close()
-					self.pointingLog = "Logs/"+timestamp + ' ' + "POINTINGLOG.txt"
-					f = open(self.pointingLog, 'w')
-					f.close()
-				except Exception, e:
-					print(str(e))
-					self.saveData = False
-					self.saveDataCheckbox.setChecked(False)
+
+				# Create the log files
+				self.rfdLog = "Logs/"+timestamp + ' ' + "RFDLOG.txt"
+				f = open(self.rfdLog, 'w')
+				f.close()
+				self.stillImageLog = "Logs/"+timestamp + ' ' + "STILLIMAGELOG.txt"
+				f = open(self.stillImageLog, 'w')
+				f.close()
+				self.balloonLocationLog = "Logs/"+timestamp + ' ' + "BALLOONLOCATIONLOG.txt"
+				f = open(self.balloonLocationLog, 'w')
+				f.close()
+				self.pointingLog = "Logs/"+timestamp + ' ' + "POINTINGLOG.txt"
+				f = open(self.pointingLog, 'w')
+				f.close()
 		elif not self.saveDataCheckbox.isChecked():
 			self.saveData = False
 			
@@ -1504,7 +1505,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			self.centerBear -= 360
 		elif self.centerBear < 0:
 			self.centerBear += 360
-		s2.close()		# Close the arduino serial port
 		print "Local Latitude: \t", self.groundLat
 		print "Local Longitude:\t", self.groundLon
 		print "Local Altitude: \t", self.groundAlt
