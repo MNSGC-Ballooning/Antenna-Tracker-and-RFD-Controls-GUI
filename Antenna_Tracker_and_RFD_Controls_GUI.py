@@ -188,6 +188,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.rfdListenButton.clicked.connect(self.rfdListenButtonPress)
 		self.getPiRuntimeDataButton.clicked.connect(self.getPiRuntimeDataButtonPress)
 		self.requestStatusButton.clicked.connect(self.requestDeviceStatus)
+		self.cutdownButton.clicked.connect(self.confirmCutdown)
 		
 		# Save Data Boolean
 		self.saveData = False
@@ -561,6 +562,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 					self.rfdCommand.foundIdentifier.connect(self.rfdCommand.setAcknowledged)
 					self.rfdCommand.piruntimeStart.connect(self.rfdCommand.getPiRuntimeData)
 					self.rfdCommand.statusStart.connect(self.rfdCommand.getDeviceStatus)
+					self.rfdCommand.cutdownStart.connect(self.rfdCommand.sendCutdown)
 					
 					# Connect the command and listen together
 					self.rfdListen.setCommand(self.rfdCommand)
@@ -1219,6 +1221,49 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			return
 			
 		self.rfdCommand.statusStart.emit()
+		
+	def confirmCutdown(self):
+		""" Confirm that the user wants to perform a cutdown """
+		if self.stillImageOnline:
+			print("Still Image System cannot be Online")
+			self.updateRFDBrowser("Still Image System cannot be Online")
+			return
+
+		if not self.RFDAttached:
+			print("No RFD Attached")
+			self.updateRFDBrowser("No RFD Attached")
+			return
+			
+		# Create the window to ask for confirmation, with text and buttons
+		self.confirmationCheckWindow = QWidget()
+		self.confirmationLabel = QLabel()
+		self.confirmationLabel.setText("WARNING! Are you sure you want to cutdown?")
+		self.confirmationYesButton = QPushButton()
+		self.confirmationNoButton = QPushButton()
+		self.confirmationYesButton.setText("Yes")
+		self.confirmationNoButton.setText("No")
+		self.confirmationHLayout = QHBoxLayout()
+		self.confirmationVLayout = QVBoxLayout()
+		self.confirmationHLayout.addWidget(self.confirmationYesButton)
+		self.confirmationHLayout.addWidget(self.confirmationNoButton)
+		self.confirmationVLayout.addWidget(self.confirmationLabel)
+		self.confirmationVLayout.addLayout(self.confirmationHLayout)
+		self.confirmationCheckWindow.setLayout(self.confirmationVLayout)
+		self.confirmationCheckWindow.show()
+
+		# Connect the buttons to the functions
+		self.confirmationYesButton.clicked.connect(lambda: self.attemptCutdown())
+		self.confirmationNoButton.clicked.connect(lambda: self.deleteWindow(self.confirmationCheckWindow))	
+			
+	def attemptCutdown(self):
+		""" Tell the RFD Thread to send the cutdown """
+		# Get rid of the window's if they're still around
+		try:
+			self.deleteWindow(self.confirmationCheckWindow)
+		except Exception, e:
+			print(str(e))
+	
+		self.rfdCommand.cutdownStart.emit()
 
 	def updateRFDBrowser(self, text):
 		self.rfdReceiveBrowser.append(text)

@@ -102,6 +102,7 @@ class RfdCommand(QtCore.QObject):
 	commandInterrupt = pyqtSignal()
 	piruntimeStart = pyqtSignal()
 	statusStart = pyqtSignal()
+	cutdownStart = pyqtSignal()
 	foundIdentifier = pyqtSignal(bool)
 
 	def __init__(self,MainWindow,RFD):
@@ -215,6 +216,11 @@ class RfdCommand(QtCore.QObject):
 	def getDeviceStatus(self):
 		""" Retrieve the status of the serial devices connected to the Pi """
 		self.rfdSer.write('IMAGE;-!')
+		
+	def sendCutdown(self):
+		self.rfdSer.write("PRI")
+		time.sleep(4)
+		self.rfdSer.write("PRI")
 
 	def setAcknowledged(self,arg):
 		self.acknowledged = arg

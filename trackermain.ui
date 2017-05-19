@@ -278,7 +278,7 @@
         <enum>QTabWidget::West</enum>
        </property>
        <property name="currentIndex">
-        <number>5</number>
+        <number>3</number>
        </property>
        <widget class="QWidget" name="Settings">
         <attribute name="title">
@@ -1468,6 +1468,22 @@
                  </property>
                  <property name="text">
                   <string>Get Runtime Data</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="cutdownButton">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Cutdown</string>
+                 </property>
+                 <property name="checkable">
+                  <bool>false</bool>
                  </property>
                 </widget>
                </item>
