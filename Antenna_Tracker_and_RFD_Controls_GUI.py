@@ -279,9 +279,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.tiltOffset = 0.00
 
 		# SQL Access
-		self.dbHost = "153.90.202.51"
-		self.dbUser = "scott"
-		self.dbPass = "Jewe1947"
+		self.dbHost = "eclipse.rci.montana.edu"
+		self.dbUser = "antenna"
+		self.dbPass = "tracker"
 		self.dbName = "freemanproject"
 
 		# Tracking Labels for APRS and Iridium
