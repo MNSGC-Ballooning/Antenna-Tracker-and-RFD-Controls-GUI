@@ -30,7 +30,7 @@ class GetIridium(QtCore.QObject):
 		self.mainWindow.noIridium.connect(self.mainWindow.iridiumNoConnection)
 		self.mainWindow.iridiumNewLocation.connect(self.mainWindow.updateBalloonLocation)
 
-        def getApiData(imei):
+        def getApiData(self, imei):
                 """Retrieve most recent IMEI data from database API as dict"""
                 url = "http://eclipse.rci.montana.edu/php/antennaTracker.php?imei=%s" % imei
                 try:
