@@ -1,1 +1,4 @@
 *.pyc
+Logs/*
+piruntimedata.txt
+Images/image*
