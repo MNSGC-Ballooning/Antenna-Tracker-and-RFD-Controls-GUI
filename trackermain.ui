@@ -592,6 +592,13 @@
                     </property>
                    </widget>
                   </item>
+                  <item row="3" column="0">
+                   <widget class="QCheckBox" name="autoRFD">
+                    <property name="text">
+                     <string>RFD900</string>
+                    </property>
+                   </widget>
+                  </item>
                   <item row="0" column="0">
                    <widget class="QCheckBox" name="autoDisabled">
                     <property name="text">
@@ -602,24 +609,10 @@
                     </property>
                    </widget>
                   </item>
-                  <item row="3" column="0">
-                   <widget class="QCheckBox" name="autoRFD">
-                    <property name="text">
-                     <string>RFD900</string>
-                    </property>
-                   </widget>
-                  </item>
                   <item row="2" column="0">
                    <widget class="QCheckBox" name="autoAPRS">
                     <property name="text">
                      <string>APRS</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="4" column="0">
-                   <widget class="QCheckBox" name="autoPayloads">
-                    <property name="text">
-                     <string>Payloads</string>
                     </property>
                    </widget>
                   </item>

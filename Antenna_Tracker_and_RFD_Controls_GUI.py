@@ -120,7 +120,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 	rfdNewLocation = pyqtSignal(BalloonUpdate)
 	iridiumNewLocation = pyqtSignal(BalloonUpdate)
 	aprsNewLocation = pyqtSignal(BalloonUpdate)
-	payloadNewLocation = pyqtSignal((BalloonUpdate,Payload))
+	payloadNewLocation = pyqtSignal(tuple)
 	payloadUpdate = pyqtSignal(str)
 
 	# Still Image Signals
@@ -209,7 +209,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.autoIridium.stateChanged.connect(self.autotrackChecked)
 		self.autoAPRS.stateChanged.connect(self.autotrackChecked)
 		self.autoRFD.stateChanged.connect(self.autotrackChecked)
-		self.autoPayloads.stateChanged.connect(self.autotrackChecked)
 	
 		# Initial Still Image System Picture Display Setup
 		self.stillImageOnline = False
@@ -644,7 +643,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.useIridium = self.autoIridium.isChecked()
 		self.useAPRS = self.autoAPRS.isChecked()
 		self.useRFD = self.autoRFD.isChecked()
-		self.usePayloads = self.autoPayloads.isChecked()
 		self.useDisabled = self.autoDisabled.isChecked()
 
 		if self.useDisabled:
@@ -702,7 +700,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			self.getIridium.setInterrupt.emit()
 			self.iridiumStarted = False
 
-		if self.autoIridium.isChecked() or self.autoAPRS.isChecked() or self.autoRFD.isChecked() or self.autoPayloads.isChecked():
+		if self.autoIridium.isChecked() or self.autoAPRS.isChecked() or self.autoRFD.isChecked():
 			self.manualRefresh()
 		else:
 			self.autoDisabled.setChecked(True)	
@@ -1371,8 +1369,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.newPayloadGPSBrowser.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
 		# Make the tracking checkbox
 		newPayloadCheckboxName = "payloadCheckbox"+str(len(self.payloadList)+1)
-		self.newPayloadCheckbox = QtGui.QCheckBox()
+		self.newPayloadCheckbox = QtGui.QCheckBox
 		self.newPayloadCheckbox.setObjectName(newPayloadCheckboxName)
+		self.newPayloadCheckbox.setText(_translate("MainWindow", "Autotrack", None))
 		# Make the grid layout and add elements to it
 		newGridName = "payloadGridLLayout"+str(len(self.payloadList)+1)
 		self.newGrid = QtGui.QGridLayout()
@@ -1488,13 +1487,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			self.autoIridium.setChecked(False)
 			self.autoAPRS.setChecked(False)
 			self.autoRFD.setChecked(False)
-			self.autoPayloads.setChecked(False)
 		self.autotrackBlock = False
 
 	def autotrackChecked(self):
 		""" Makes sure that disabled isn't checked if there is an autotrack option checked """
 
-		if self.autoIridium.isChecked() or self.autoAPRS.isChecked() or self.autoRFD.isChecked() or self.autoPayloads.isChecked():
+		if self.autoIridium.isChecked() or self.autoAPRS.isChecked() or self.autoRFD.isChecked():
 			if not self.autotrackBlock:
 				self.autoDisabled.setChecked(False)
 
