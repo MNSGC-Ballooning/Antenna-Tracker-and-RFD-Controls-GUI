@@ -120,6 +120,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 	rfdNewLocation = pyqtSignal(BalloonUpdate)
 	iridiumNewLocation = pyqtSignal(BalloonUpdate)
 	aprsNewLocation = pyqtSignal(BalloonUpdate)
+	payloadNewLocation = pyqtSignal((BalloonUpdate,Payload))
 	payloadUpdate = pyqtSignal(str)
 
 	# Still Image Signals
@@ -208,6 +209,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.autoIridium.stateChanged.connect(self.autotrackChecked)
 		self.autoAPRS.stateChanged.connect(self.autotrackChecked)
 		self.autoRFD.stateChanged.connect(self.autotrackChecked)
+		self.autoPayloads.stateChanged.connect(self.autotrackChecked)
 	
 		# Initial Still Image System Picture Display Setup
 		self.stillImageOnline = False
@@ -292,6 +294,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.mapMade = False
 		
 		self.currentBalloon = BalloonUpdate('', 0, 0, 0, 0, '', 0, 0, 0)
+		self.balloonUpdates = []
 		self.tabs.setCurrentIndex(0)
 
 		# Graph Setup
@@ -356,6 +359,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 	def updateBalloonLocation(self, update):
 		""" Updates the tracker with the latest balloon location """
 		
+		# A payload GPS update will pass in a tuple, so check that first
+		try:
+			if not update[1].isTracking():		# If not tracking that payload, return
+				return
+		except:
+			pass	
+		
 		# Log the balloon location no matter what
 		self.logData("balloonLocation", update.getTrackingMethod()+','+str(update.getTime())+','+str(update.getLat())+','+str(update.getLon())+','+str(update.getAlt())+','+str(update.getBear())+','+str(update.getEle())+','+str(update.getLOS()))
 
@@ -368,27 +378,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		if update.getTrackingMethod() == 'APRS':
 			if not self.useAPRS:
 				return
+		if update.getTrackingMethod().split(':')[0] == 'Payload':
+			if not self.usePayloads:
+				return
 		
 		# Make sure it's a good location
 		if ((update.getLat() == 0.0) or (update.getLon() == 0.0) or (update.getAlt() == 0.0)):		# Don't consider updates with bad info to be new updates
 			return
 		
 		# Makes sure it's the newest location
-		if update.getSeconds() < self.currentBalloon.getSeconds():
-			return
-			# Confirm that update matches a selected tracking method
-			# if self.currentBalloon.getTrackingMethod() == 'RFD':
-				# if (not self.useIridium or not self.useAPRS) and self.useRFD:
-					# return
-					
-			# if self.currentBalloon.getTrackingMethod() == 'Iridium':
-				# if (not self.useRFD or not self.useAPRS) and self.useIridium:
-					# return
-					
-			# if self.currentBalloon.getTrackingMethod() == 'APRS':
-				# if (not self.useIridium or not self.useRFD) and self.useAPRS:
-					# return
-			
+		if update.getSeconds() <= self.currentBalloon.getSeconds():
+			return	
 
 		# If you haven't returned by now, update the graphing arrays
 		try:
@@ -398,9 +398,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 		self.antennaOnline(update)		# Move the tracker if tracking
 		self.refresh(update)			# Update the tables
+		self.balloonUpdates.append(self.currentBalloon)
 		self.currentBalloon = update
 		if self.internetAccess and self.mapMade:		# Update the map
-			self.mapView.setHtml(getMapHtml(update.getLat(), update.getLon(), googleMapsApiKey))
+			if not ((self.balloonUpdates[-1].getLat() == update.getLat()) and (self.balloonUpdates[-1].getLon() == update.getLon())):
+				self.mapView.setHtml(getMapHtml(self.balloonUpdates, update, googleMapsApiKey))
 	
 	def updateIncoming(self, row, column, value):
 		""" Update the Incoming GPS Data grid with the newest values """
@@ -515,7 +517,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			# Set up the Map View
 			if not self.mapMade:
 				self.mapView = WebView()
-				self.mapView.setHtml(getMapHtml(45, -93, googleMapsApiKey))
+				self.mapView.setHtml(getMapHtml(self.balloonUpdates, self.currentBalloon, googleMapsApiKey))
 				self.mapViewGridLayout.addWidget(self.mapView)
 			self.mapMade = True
 		else:
@@ -533,9 +535,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 					servoCOM = str(self.servoCOM.text())
 					self.servos = SerialDevice(servoCOM, 9600, 0.5)
 					self.servoController = ServoController(self.servos.getDevice())
+					self.servoController.setTiltMap(35, 127, 127, 0, 85)
+					self.tiltServoSlider.setMinimum(0)
+					self.tiltServoSlider.setMaximum(85)
 					self.servoController.setServoAccel(1, 1)
 					self.servoController.setServoSpeed(3, 1)
 					self.servosStarted = True
+					
 
 		if self.rfdAttached.isChecked():
 			if not self.rfdStarted:
@@ -638,12 +644,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.useIridium = self.autoIridium.isChecked()
 		self.useAPRS = self.autoAPRS.isChecked()
 		self.useRFD = self.autoRFD.isChecked()
+		self.usePayloads = self.autoPayloads.isChecked()
 		self.useDisabled = self.autoDisabled.isChecked()
 
 		if self.useDisabled:
 			self.useIridium = False
 			self.useAPRS = False
 			self.useRFD = False
+			self.usePayloads = False
 
 		# Start up each type of tracking selected
 		if self.useRFD:
@@ -694,7 +702,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			self.getIridium.setInterrupt.emit()
 			self.iridiumStarted = False
 
-		if self.autoIridium.isChecked() or self.autoAPRS.isChecked() or self.autoRFD.isChecked():
+		if self.autoIridium.isChecked() or self.autoAPRS.isChecked() or self.autoRFD.isChecked() or self.autoPayloads.isChecked():
 			self.manualRefresh()
 		else:
 			self.autoDisabled.setChecked(True)	
@@ -1361,6 +1369,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.newPayloadGPSBrowser = QtGui.QTextBrowser()
 		self.newPayloadGPSBrowser.setObjectName(newPayloadGPSBrowserName)
 		self.newPayloadGPSBrowser.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+		# Make the tracking checkbox
+		newPayloadCheckboxName = "payloadCheckbox"+str(len(self.payloadList)+1)
+		self.newPayloadCheckbox = QtGui.QCheckBox()
+		self.newPayloadCheckbox.setObjectName(newPayloadCheckboxName)
 		# Make the grid layout and add elements to it
 		newGridName = "payloadGridLLayout"+str(len(self.payloadList)+1)
 		self.newGrid = QtGui.QGridLayout()
@@ -1375,22 +1387,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			self.newPayloadWebView = WebView()
 			self.newPayloadWebView.setObjectName(newPayloadWebViewName)
 			self.newPayloadWebView.setSizePolicy(QtGui.QSizePolicy.Ignored, QtGui.QSizePolicy.Expanding)
-			# Make a Vertical Layout for the GPS Browser and Webview
+			# Make a Vertical Layout for the GPS Browser, Webview and checkbox
 			self.newPayloadVertical = QtGui.QVBoxLayout()
 			self.newPayloadVertical.addWidget(self.newPayloadGPSBrowser)
 			self.newPayloadVertical.addWidget(self.newPayloadWebView)
+			self.newPayloadVertical.addWidget(self.newPayloadCheckbox)
 			self.newGrid.addLayout(self.newPayloadVertical, 1, 1, 1, 1)
-			self.newPayloadWebView.setHtml(getMapHtml(self.currentBalloon.getLat(), self.currentBalloon.getLon(), googleMapsApiKey))
+			# self.newPayloadWebView.setHtml(getMapHtml(self.currentBalloon.getLat(), self.currentBalloon.getLon(), googleMapsApiKey))
 			
 		else:
-			self.newGrid.addWidget(self.newPayloadGPSBrowser, 1, 1, 1, 1)
+			# Make a Vertical Layout for the GPS Browser and checkbox
+			self.newPayloadVertical = QtGui.QVBoxLayout()
+			self.newPayloadVertical.addWidget(self.newPayloadGPSBrowser)
+			self.newPayloadVertical.addWidget(self.newPayloadCheckbox)
+			self.newGrid.addLayout(self.newPayloadVertical, 1, 1, 1, 1)
 		
 		# Add the new objects to a new tab
 		self.tempWidget = QWidget()
 		self.tempWidget.setLayout(self.newGrid)
 		self.payloadTabs.addTab(self.tempWidget, name)
 		
-		newPayload = Payload(name, self.newPayloadMessagesBrowser, self.newPayloadGPSBrowser)		# Create the new payload
+		newPayload = Payload(name, self.newPayloadMessagesBrowser, self.newPayloadGPSBrowser, self.newPayloadCheckbox, self)		# Create the new payload
 		if self.internetAccess:		# If there's internet, add the webview
 			newPayload.addWebview(self.newPayloadWebView)
 			
@@ -1471,12 +1488,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			self.autoIridium.setChecked(False)
 			self.autoAPRS.setChecked(False)
 			self.autoRFD.setChecked(False)
+			self.autoPayloads.setChecked(False)
 		self.autotrackBlock = False
 
 	def autotrackChecked(self):
 		""" Makes sure that disabled isn't checked if there is an autotrack option checked """
 
-		if self.autoIridium.isChecked() or self.autoAPRS.isChecked() or self.autoRFD.isChecked():
+		if self.autoIridium.isChecked() or self.autoAPRS.isChecked() or self.autoRFD.isChecked() or self.autoPayloads.isChecked():
 			if not self.autotrackBlock:
 				self.autoDisabled.setChecked(False)
 
@@ -1669,7 +1687,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			self.servoController.movePanServo(math.trunc(panTo))
 
 		# Get the correct numerical value for the servo position by adjusting based on offset, max and min
-		tiltTo = (((0-elevation) - self.servoController.tiltAngleMin) * (self.servoController.servoMax - self.servoController.servoMin) / (self.servoController.tiltAngleMax - self.servoController.tiltAngleMin) + self.servoController.servoMin) + (255*(-self.tiltOffset)/360)
+		# tiltTo = (((0-elevation) - self.servoController.tiltAngleMin) * (self.servoController.servoMax - self.servoController.servoMin) / (self.servoController.tiltAngleMax - self.servoController.tiltAngleMin) + self.servoController.servoMin) + (255*(-self.tiltOffset)/360)
+		tiltTo = elevation*self.servoController.tiltSlope + self.servoController.tiltMapZero + (255*(-self.tiltOffset)/360)
 		print(tiltTo)
 		if tiltTo > 254:
 			tiltTo = 254		# Don't go over the max
@@ -1678,7 +1697,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		if self.servosAttached:		# Move the servos to the new locations if they're attacheed
 			self.servoController.moveTiltServo(math.trunc(tiltTo))
 		if temp != 0:
-				self.centerBear = temp
+			self.centerBear = temp
 			
 		# Write the new pointing location to the log file
 		self.logData("pointing", str(bearing)+','+str(elevation))

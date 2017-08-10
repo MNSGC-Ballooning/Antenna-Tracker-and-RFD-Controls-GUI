@@ -278,7 +278,7 @@
         <enum>QTabWidget::West</enum>
        </property>
        <property name="currentIndex">
-        <number>3</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="Settings">
         <attribute name="title">
@@ -585,6 +585,13 @@
                   <enum>QFrame::Raised</enum>
                  </property>
                  <layout class="QGridLayout" name="gridLayout_6">
+                  <item row="1" column="0">
+                   <widget class="QCheckBox" name="autoIridium">
+                    <property name="text">
+                     <string>Iridium</string>
+                    </property>
+                   </widget>
+                  </item>
                   <item row="0" column="0">
                    <widget class="QCheckBox" name="autoDisabled">
                     <property name="text">
@@ -595,10 +602,10 @@
                     </property>
                    </widget>
                   </item>
-                  <item row="1" column="0">
-                   <widget class="QCheckBox" name="autoIridium">
+                  <item row="3" column="0">
+                   <widget class="QCheckBox" name="autoRFD">
                     <property name="text">
-                     <string>Iridium</string>
+                     <string>RFD900</string>
                     </property>
                    </widget>
                   </item>
@@ -609,10 +616,10 @@
                     </property>
                    </widget>
                   </item>
-                  <item row="3" column="0">
-                   <widget class="QCheckBox" name="autoRFD">
+                  <item row="4" column="0">
+                   <widget class="QCheckBox" name="autoPayloads">
                     <property name="text">
-                     <string>RFD900</string>
+                     <string>Payloads</string>
                     </property>
                    </widget>
                   </item>

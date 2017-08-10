@@ -12,8 +12,13 @@ class ServoController:
 		self.tiltChannel = 0
 		self.tiltAccel = 1
 		self.tiltSpeed = 1
-		self.tiltAngleMin = -180		# -90
-		self.tiltAngleMax = 180		 # 90
+		self.tiltAngleMin = 0
+		self.tiltAngleMax = 85
+		self.tiltMapMin = 35
+		self.tiltMapZero = 127
+		self.tiltMapMax = 127
+		# self.tiltAngleMin = -180		# -90
+		# self.tiltAngleMax = 180		 # 90
 
 		# change the movement speed etc of ubiquity pan servo
 		self.panChannel = 1
@@ -42,15 +47,24 @@ class ServoController:
 		self.moveCommand = moveCommand
 		self.accelCommand = accelCommand
 		self.speedCommand = speedCommand
+		
+	def setTiltMap(self, mapMin, mapZero, mapMax, angleMin, angleMax):
+		""" Setter method to change tilt servo mapping """
+		
+		self.tiltMapMin = mapMin
+		self.tiltMapZero = mapZero
+		self.tiltMapMax = mapMax
+		self.tiltAngleMin = angleMin
+		self.tiltAngleMax = angleMax
+		
+		self.tiltSlope = (float(self.tiltMapMin) - float(self.tiltMapZero))/(float(self.tiltAngleMax) - float(0))
 
-	def setTiltSettings(self, channel, accel, speed, angleMax, angleMin):
+	def setTiltSettings(self, channel, accel, speed):
 		""" Setter method to change tilt settings """
 
 		self.tiltChannel = channel
 		self.tiltAccel = accel
 		self.tiltSpeed = speed
-		self.tiltAngleMin = angleMax
-		self.tiltAngleMax = angleMin
 
 		self.setServoAccel(self.panAccel, self.tiltAccel)
 		self.setServoSpeed(self.panSpeed, self.tiltSpeed)
@@ -106,13 +120,13 @@ class ServoController:
 		
 		try:
 			
-			### Move the tilt servo ###
-			if position < 71:		  # 80 degrees upper limit
-					moveTilt = [self.moveCommand,self.tiltChannel,chr(71)]
-			elif position > 123:	   # 5 degrees lower limit
-					moveTilt = [self.moveCommand,self.tiltChannel,chr(123)]
+			# Move the tilt servo ###
+			if position < 35:		  # 85 degrees upper limit
+					moveTilt = [self.moveCommand,self.tiltChannel,chr(35)]
+			elif position > 127:
+					moveTilt = [self.moveCommand,self.tiltChannel,chr(127)]
 			else:
-					moveTilt = [self.moveCommand,self.tiltChannel,chr(position)]
+				moveTilt = [self.moveCommand,self.tiltChannel,chr(position)]
 			self.servoController.write(moveTilt)
 			print "\t\tMove Tilt: ", float(position)
 
