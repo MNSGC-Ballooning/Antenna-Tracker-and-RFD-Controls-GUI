@@ -42,7 +42,7 @@ class Payload:
 			self.gpsUpdates.append(temp)
 			self.newGPSUpdates.append(temp)
 			self.time = temp.getMessage().split(',')[0]
-			seconds = self.time.split(':')[0]*3600 + self.time.split(':')[1]*60 + self.time.split(':')[2]
+			seconds = int(self.time.split(':')[0])*3600 + int(self.time.split(':')[1])*60 + int(self.time.split(':')[2])
 			self.lat = temp.getMessage().split(',')[1]
 			self.lon = temp.getMessage().split(',')[2]
 			self.alt = temp.getMessage().split(',')[3]

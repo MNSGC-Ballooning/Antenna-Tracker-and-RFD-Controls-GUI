@@ -1369,9 +1369,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.newPayloadGPSBrowser.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
 		# Make the tracking checkbox
 		newPayloadCheckboxName = "payloadCheckbox"+str(len(self.payloadList)+1)
-		self.newPayloadCheckbox = QtGui.QCheckBox
-		self.newPayloadCheckbox.setObjectName(newPayloadCheckboxName)
-		self.newPayloadCheckbox.setText(_translate("MainWindow", "Autotrack", None))
+		self.newPayloadCheckbox = QtGui.QCheckBox("Autotrack")
+		# self.newPayloadCheckbox.setObjectName(newPayloadCheckboxName)
+		# self.newPayloadCheckbox.setText("Autotrack")
 		# Make the grid layout and add elements to it
 		newGridName = "payloadGridLLayout"+str(len(self.payloadList)+1)
 		self.newGrid = QtGui.QGridLayout()
