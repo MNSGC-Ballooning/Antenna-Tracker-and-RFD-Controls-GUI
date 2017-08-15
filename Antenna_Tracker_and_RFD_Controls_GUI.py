@@ -401,7 +401,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.currentBalloon = update
 		if self.internetAccess and self.mapMade:		# Update the map
 			if not ((self.balloonUpdates[-1].getLat() == update.getLat()) and (self.balloonUpdates[-1].getLon() == update.getLon())):
-				self.mapView.setHtml(getMapHtml(self.balloonUpdates, update, googleMapsApiKey))
+				# self.mapView.setHtml(getMapHtml(self.balloonUpdates, update, googleMapsApiKey))
+				if self.mapView.finishedLoading:
+					self.mapView.addPoint(update.getLat(),update.getLon())
 	
 	def updateIncoming(self, row, column, value):
 		""" Update the Incoming GPS Data grid with the newest values """
@@ -515,8 +517,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			
 			# Set up the Map View
 			if not self.mapMade:
-				self.mapView = WebView()
-				self.mapView.setHtml(getMapHtml(self.balloonUpdates, self.currentBalloon, googleMapsApiKey))
+				self.mapView = ViewOnlyMap(googleMapsApiKey)
+				# self.mapView = WebView()
+				# self.mapView.setHtml(getMapHtml(self.balloonUpdates, self.currentBalloon, googleMapsApiKey))
 				self.mapViewGridLayout.addWidget(self.mapView)
 			self.mapMade = True
 		else:
