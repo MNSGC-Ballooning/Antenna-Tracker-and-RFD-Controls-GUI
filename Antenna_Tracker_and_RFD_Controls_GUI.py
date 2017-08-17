@@ -362,6 +362,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		try:
 			if not update[1].isTracking():		# If not tracking that payload, return
 				return
+			else:
+				update = update[0]
 		except:
 			pass	
 		
@@ -376,9 +378,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 				return
 		if update.getTrackingMethod() == 'APRS':
 			if not self.useAPRS:
-				return
-		if update.getTrackingMethod().split(':')[0] == 'Payload':
-			if not self.usePayloads:
 				return
 		
 		# Make sure it's a good location
@@ -1308,7 +1307,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			for line in each.getNewMessages():
 				each.getMessageBrowser().append(line.getTimestamp() + " || " + line.getMessage())
 			for line in each.getNewGPSUpdates():
-				each.getGPSBrowser().append(line.getTimestamp() + " || " + line.getMessage())
+				each.getGPSBrowser().append(line.getTimestamp() + " || " + line.getMessage().replace('!',''))
 			if each.hasMap() and each.inNewLocation():
 				each.updateMap()
 		
@@ -1386,7 +1385,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		if self.internetAccess:		# Only make the map if you have internet access
 			# Make the QWebView
 			newPayloadWebViewName = 'payloadWebView'+str(len(self.payloadList)+1)
-			self.newPayloadWebView = WebView()
+			self.newPayloadWebView = ViewOnlyMap(googleMapsApiKey)
+			# self.newPayloadWebView = WebView()
 			self.newPayloadWebView.setObjectName(newPayloadWebViewName)
 			self.newPayloadWebView.setSizePolicy(QtGui.QSizePolicy.Ignored, QtGui.QSizePolicy.Expanding)
 			# Make a Vertical Layout for the GPS Browser, Webview and checkbox

@@ -2,6 +2,7 @@ import PyQt4
 import time
 import datetime
 from datetime import *
+from BalloonUpdate import *				# Class to hold balloon info
 from MapHTML import *
 
 
@@ -38,15 +39,17 @@ class Payload:
 
 	def addMessage(self,msg):			# Determines if a message is actually a GPS update, sorts it appropriately
 		temp = PayloadMessage(msg)
+		msg = temp.getMessage()
 		if len(temp.getMessage().split(',')) == 5:		# GPS Updates are always comma separated with a length of 5
+			msg = msg.replace('!','')
 			self.gpsUpdates.append(temp)
 			self.newGPSUpdates.append(temp)
 			self.time = temp.getMessage().split(',')[0]
 			seconds = int(self.time.split(':')[0])*3600 + int(self.time.split(':')[1])*60 + int(self.time.split(':')[2])
-			self.lat = temp.getMessage().split(',')[1]
-			self.lon = temp.getMessage().split(',')[2]
-			self.alt = temp.getMessage().split(',')[3]
-			self.sat = temp.getMessage().split(',')[4]
+			self.lat = float(msg.split(',')[1])
+			self.lon = float(msg.split(',')[2])
+			self.alt = float(msg.split(',')[3])*3.2808
+			self.sat = float(msg.split(',')[4])
 			self.newLocation = True
 			
 			#Create new location object
@@ -54,7 +57,7 @@ class Payload:
 				newLocation = BalloonUpdate(self.time,seconds,self.lat,self.lon,self.alt,"Payload: "+str(self.name),self.mainWindow.groundLat,self.mainWindow.groundLon,self.mainWindow.groundAlt)
 				self.locations.append(newLocation)
 			except:
-				print("Error creating a new balloon lcoation object from Payload Data")
+				print("Error creating a new balloon location object from Payload Data")
 
 			try:
 				self.mainWindow.payloadNewLocation.emit((newLocation,self))
@@ -70,7 +73,7 @@ class Payload:
 		self.map = True
 		
 	def updateMap(self):
-		self.webview.setHtml(getMapHtml(self.locations,self.locations[-1],googleMapsApiKey))
+		self.webview.addPoint(self.locations[-1].getLat(),self.locations[-1].getLon())
 		self.newLocation = False
 		
 	def hasMap(self):

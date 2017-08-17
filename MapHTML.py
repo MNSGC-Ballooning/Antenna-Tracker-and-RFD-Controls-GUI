@@ -6,7 +6,8 @@ def getMapHtml(updates, update, apiKey):
 	""" Generates an HTML and JavaScript code segment using Google Maps API to plot the lat and lon on a map """
 	
 	locs = []
-	for each in updates[1:]:
+	for each in updates:
+	# for each in updates[1:]:
 		locs.append((each.getLat(),each.getLon()))
 	locs.append((update.getLat(),update.getLon()))
 	
@@ -15,7 +16,8 @@ def getMapHtml(updates, update, apiKey):
 	for each in locs:
 		temp = '{lat: ' + str(each[0]) + ', lng: ' + str(each[1]) + '},'
 		allPoints += temp
-	allPoints = allPoints[:-1]
+	# allPoints = allPoints[:-1]
+	print(allPoints)
 	
 	### The HTML and JavaScript is a formatted string, this allows for a Google Maps widget ###
 	maphtml = '''
@@ -199,7 +201,10 @@ class ViewOnlyMap(QWebView):
 	
 			poly = new google.maps.Polyline({
 				map: map,
-				path: [],
+				path: [
+					new google.maps.LatLng(37.4419, -122.1419), 
+					new google.maps.LatLng(37.4519, -122.1519)
+					],
 				strokeColor: '#FF0000',
 				strokeOpacity: 1.0,
 				strokeWeight: 2
